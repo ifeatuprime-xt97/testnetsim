@@ -2,7 +2,7 @@ import React from 'react';
 import { NETWORKS } from '../config/networks.js';
 import { deleteSession } from '../utils/storageUtils.js';
 
-export default function HistoryPanel({ isOpen, onClose, sessions, onRefreshHistory, onLoadSession }) {
+export default function HistoryPanel({ isOpen, onClose, sessions, onRefreshHistory, onLoadSession, onReplaySession }) {
     if (!isOpen) return null;
 
     const handleDelete = (e, id) => {
@@ -100,14 +100,25 @@ export default function HistoryPanel({ isOpen, onClose, sessions, onRefreshHisto
                                         </div>
                                     </div>
 
-                                    {/* Delete Button (visible on hover) */}
-                                    <button
+                                    {/* Replay + Delete Buttons (visible on hover) */}
+                                    <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      {onReplaySession && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); onReplaySession(session); }}
+                                          className="p-1.5 rounded bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20"
+                                          title="Replay Session"
+                                        >
+                                          🔄
+                                        </button>
+                                      )}
+                                      <button
                                         onClick={(e) => handleDelete(e, session.id)}
-                                        className="absolute top-3 right-3 p-1.5 rounded bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
+                                        className="p-1.5 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20"
                                         title="Delete Session"
-                                    >
+                                      >
                                         🗑
-                                    </button>
+                                      </button>
+                                    </div>
                                 </div>
                             );
                         })

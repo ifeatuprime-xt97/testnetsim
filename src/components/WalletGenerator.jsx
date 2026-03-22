@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { generateWallets, shortAddress } from '../utils/walletUtils.js';
 import { exportWalletsCSV, exportWalletsJSON } from '../utils/exportUtils.js';
 import { NETWORKS } from '../config/networks.js';
+import { fundWallet } from '../utils/onChainEngine.js';
 
 // ── Collapsible guide section ──────────────────────────────────────────────
 function GuideStep({ n, title, desc }) {
@@ -20,12 +21,15 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function WalletGenerator({ network, addLog }) {
+export default function WalletGenerator({ network, addLog, masterKey }) {
   const [count, setCount] = useState(10);
   const [wallets, setWallets] = useState([]);
   const [revealedKeys, setRevealedKeys] = useState({});
   const [generating, setGenerating] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [funding, setFunding] = useState(false);
+  const [fundProgress, setFundProgress] = useState('');
+  const [fundAmount, setFundAmount] = useState(0.01);
 
   const net = NETWORKS[network];
   const keyType = net?.isSolana ? 'ed25519' : 'secp256k1';
@@ -77,6 +81,27 @@ export default function WalletGenerator({ network, addLog }) {
       return `${net.explorer}/account/${address}${net.explorerParams ?? ''}`;
     }
     return `${net?.explorer}/address/${address}`;
+  }
+
+  async function handleFundAll() {
+    if (!masterKey || wallets.length === 0 || funding) return;
+    setFunding(true);
+    addLog?.(`Funding ${wallets.length} wallets with ${fundAmount} ${net?.currency} each...`, 'info');
+
+    let funded = 0;
+    for (const w of wallets) {
+      setFundProgress(`Funding wallet ${funded + 1}/${wallets.length}...`);
+      try {
+        await fundWallet(masterKey, w.address, fundAmount, net);
+        funded++;
+      } catch (err) {
+        addLog?.(`Failed to fund ${shortAddress(w.address)}: ${err.message}`, 'error');
+      }
+    }
+
+    setFunding(false);
+    setFundProgress('');
+    addLog?.(`Funded ${funded}/${wallets.length} wallets with ${fundAmount} ${net?.currency} each`, funded === wallets.length ? 'success' : 'warn');
   }
 
   return (
@@ -188,6 +213,38 @@ export default function WalletGenerator({ network, addLog }) {
               {net.faucet.replace('https://', '')}
             </a>
           </p>
+        )}
+
+        {/* Fund All Wallets (visible when master key is set and wallets exist) */}
+        {masterKey && wallets.length > 0 && (
+          <div className="mt-4 p-4 rounded-xl bg-theme-base border border-theme-subtle transition-colors">
+            <h3 className="text-xs font-semibold text-theme-secondary uppercase tracking-wider mb-3 transition-colors">Fund All Wallets from Master</h3>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[10rem]">
+                <label className="label">Amount per wallet ({net?.currency})</label>
+                <input
+                  type="number"
+                  className="input-field"
+                  min={0.001}
+                  step={0.005}
+                  value={fundAmount}
+                  onChange={e => setFundAmount(+e.target.value)}
+                  disabled={funding}
+                />
+              </div>
+              <button onClick={handleFundAll} disabled={funding} className="btn-primary text-xs">
+                {funding ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-indigo-300 rounded-full pulse-dot" />
+                    {fundProgress}
+                  </span>
+                ) : `Fund ${wallets.length} Wallets`}
+              </button>
+            </div>
+            <p className="text-xs text-theme-secondary mt-2 opacity-80 transition-colors">
+              Total: ~{(fundAmount * wallets.length).toFixed(4)} {net?.currency} (+ gas)
+            </p>
+          </div>
         )}
       </div>
 

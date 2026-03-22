@@ -77,7 +77,8 @@ async function executeSolanaTrade(walletKey, network) {
         })
     );
 
-    await sendAndConfirmTransaction(connection, transaction, [keypair]);
+    const signature = await sendAndConfirmTransaction(connection, transaction, [keypair]);
+    return { hash: signature };
 }
 
 /**
@@ -85,8 +86,7 @@ async function executeSolanaTrade(walletKey, network) {
  */
 export async function executeBuy(walletKey, amountEth, tokenAddress, network) {
     if (network.isSolana) {
-        await executeSolanaTrade(walletKey, network);
-        return;
+        return await executeSolanaTrade(walletKey, network);
     }
 
     const provider = getProvider(network);
@@ -126,8 +126,7 @@ export async function executeBuy(walletKey, amountEth, tokenAddress, network) {
  */
 export async function executeSell(walletKey, tokenAddress, network) {
     if (network.isSolana) {
-        await executeSolanaTrade(walletKey, network);
-        return;
+        return await executeSolanaTrade(walletKey, network);
     }
 
     const provider = getProvider(network);

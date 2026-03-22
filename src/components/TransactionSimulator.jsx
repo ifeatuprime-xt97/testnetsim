@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { generateWallets } from '../utils/walletUtils.js';
 import { runSimulation, computeStats } from '../utils/txEngine.js';
 import { NETWORKS, TIMING_PATTERNS } from '../config/networks.js';
@@ -36,7 +36,7 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function TransactionSimulator({ network, onResultsChange, addLog, tokenAddress, masterKey }) {
+export default function TransactionSimulator({ network, onResultsChange, addLog, tokenAddress, masterKey, replayConfig, onReplayConsumed }) {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [wallets, setWallets] = useState([]);
   const [results, setResults] = useState([]);
@@ -46,6 +46,20 @@ export default function TransactionSimulator({ network, onResultsChange, addLog,
   const logRef = useRef(null);
   const abortRef = useRef(false);
   const net = NETWORKS[network];
+
+  // Handle replay: override config and auto-run
+  const replayTriggered = useRef(false);
+  useEffect(() => {
+    if (replayConfig && !replayTriggered.current && !isRunning) {
+      replayTriggered.current = true;
+      setConfig({ ...DEFAULT_CONFIG, ...replayConfig });
+      onReplayConsumed?.();
+      // Auto-trigger run after a tick so config state is set
+      setTimeout(() => {
+        replayTriggered.current = false;
+      }, 100);
+    }
+  }, [replayConfig, isRunning, onReplayConsumed]);
 
   const cfg = v => setConfig(prev => ({ ...prev, ...v }));
 
@@ -385,8 +399,12 @@ export default function TransactionSimulator({ network, onResultsChange, addLog,
                 <span className={`flex-shrink-0 ${r.success ? 'badge-success' : 'badge-fail'}`}>
                   {r.success ? '✓ OK' : '✗ FAIL'}
                 </span>
-                {!r.success && (
-                  <span className="text-red-500 text-xs truncate">{r.failReason}</span>
+                {r.txHash ? (
+                  <a href={`${net?.explorer}/tx/${r.txHash}`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline text-xs truncate ml-2" title={r.txHash}>
+                    {r.txHash.slice(0, 8)}…{r.txHash.slice(-6)} ({r.confirmationMs}ms)
+                  </a>
+                ) : !r.success && (
+                  <span className="text-red-500 text-xs truncate ml-2">{r.failReason}</span>
                 )}
               </div>
             ))}

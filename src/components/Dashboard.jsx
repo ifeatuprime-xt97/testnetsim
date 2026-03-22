@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, ScatterChart, Scatter, ZAxis,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { exportJSON, exportCSV } from '../utils/exportUtils.js';
+import { exportJSON, exportCSV, exportPDFReport } from '../utils/exportUtils.js';
+import { NETWORKS } from '../config/networks.js';
 
 const COLORS = { success: '#10b981', fail: '#ef4444', buy: '#6366f1', sell: '#f59e0b' };
 
@@ -33,7 +35,8 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function Dashboard({ results, stats, config, tokenAddress }) {
+export default function Dashboard({ results, stats, config, tokenAddress, network }) {
+  const net = NETWORKS[network];
   const [showGuide, setShowGuide] = useState(false);
 
   const timelineData = useMemo(() => {
@@ -84,6 +87,46 @@ export default function Dashboard({ results, stats, config, tokenAddress }) {
       { name: 'Sells', value: stats.sellCount },
     ];
   }, [stats]);
+
+  // TPS over time data
+  const tpsData = useMemo(() => {
+    if (!results?.length) return [];
+    const windowMs = 1000; // 1 second buckets
+    const buckets = [];
+    let bucketStart = results[0].virtualTime || 0;
+    let count = 0;
+    results.forEach(r => {
+      const t = r.virtualTime || 0;
+      if (t - bucketStart > windowMs) {
+        buckets.push({ time: +(bucketStart / 1000).toFixed(1), tps: count });
+        bucketStart = t;
+        count = 0;
+      }
+      count++;
+    });
+    if (count > 0) buckets.push({ time: +(bucketStart / 1000).toFixed(1), tps: count });
+    return buckets;
+  }, [results]);
+
+  // Latency heatmap data — scatter of virtual time vs price impact
+  const heatmapData = useMemo(() => {
+    if (!results?.length) return [];
+    return results.filter(r => r.success).map(r => ({
+      id: r.id,
+      time: +((r.virtualTime || 0) / 1000).toFixed(1),
+      impact: +r.priceImpact.toFixed(3),
+      gas: r.gasPriceGwei,
+    }));
+  }, [results]);
+
+  // Price impact progression
+  const priceImpactData = useMemo(() => {
+    if (!results?.length) return [];
+    return results.filter(r => r.success).map(r => ({
+      tx: r.id,
+      impact: +r.priceImpact.toFixed(3),
+    }));
+  }, [results]);
 
   const hasData = results?.length > 0 && stats;
 
@@ -185,6 +228,9 @@ export default function Dashboard({ results, stats, config, tokenAddress }) {
           <button onClick={() => exportJSON(results, stats, config)} className="btn-secondary text-xs py-1.5">
             Export JSON
           </button>
+          <button onClick={() => exportPDFReport(results, stats, config, net?.name)} className="btn-primary text-xs py-1.5">
+            Export PDF
+          </button>
         </div>
       </div>
 
@@ -241,6 +287,48 @@ export default function Dashboard({ results, stats, config, tokenAddress }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      {/* ── TPS Over Time ─────────────────────────────────────── */}
+      {tpsData.length > 1 && (
+        <div className="card">
+          <h3 className="text-sm font-semibold text-theme-primary mb-4 transition-colors">Transactions Per Second (TPS)</h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={tpsData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="tpsGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="time" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} label={{ value: 'Time (s)', position: 'insideBottom', fill: 'var(--text-secondary)', fontSize: 10, dy: 10 }} />
+              <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }} />
+              <Line type="monotone" dataKey="tps" name="TPS" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Price Impact Progression ──────────────────────────── */}
+      {priceImpactData.length > 1 && (
+        <div className="card">
+          <h3 className="text-sm font-semibold text-theme-primary mb-4 transition-colors">Price Impact Progression</h3>
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={priceImpactData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="impactProgGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="tx" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} label={{ value: 'Transaction #', position: 'insideBottom', fill: 'var(--text-secondary)', fontSize: 10, dy: 10 }} />
+              <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }} formatter={(v) => [v + '%', 'Impact']} />
+              <Area type="monotone" dataKey="impact" stroke="#f59e0b" fill="url(#impactProgGrad)" strokeWidth={1.5} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* ── Charts Row ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -311,6 +399,26 @@ export default function Dashboard({ results, stats, config, tokenAddress }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Latency Heatmap ──────────────────────────────────────── */}
+      {heatmapData.length > 0 && (
+        <div className="card">
+          <h3 className="text-sm font-semibold text-theme-primary mb-2 transition-colors">Latency Heatmap</h3>
+          <p className="text-xs text-theme-secondary mb-4 transition-colors">Each dot = one TX. X = time, Y = price impact, size = gas price. Larger/redder dots indicate higher-cost, higher-impact transactions.</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <ScatterChart margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <XAxis type="number" dataKey="time" name="Time (s)" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <YAxis type="number" dataKey="impact" name="Impact (%)" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
+              <ZAxis type="number" dataKey="gas" range={[20, 200]} name="Gas" />
+              <Tooltip
+                contentStyle={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
+                formatter={(val, name) => [name === 'Impact (%)' ? val + '%' : name === 'Gas' ? val + ' Gwei' : val + 's', name]}
+              />
+              <Scatter data={heatmapData} fill="#6366f1" opacity={0.6} />
+            </ScatterChart>
+          </ResponsiveContainer>
         </div>
       )}
 

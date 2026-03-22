@@ -5,6 +5,9 @@ import TransactionSimulator from './components/TransactionSimulator.jsx';
 import LiquidityStressTest from './components/LiquidityStressTest.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import HistoryPanel from './components/HistoryPanel.jsx';
+import GasEstimation from './components/GasEstimation.jsx';
+import NetworkComparison from './components/NetworkComparison.jsx';
+import TxMonitor from './components/TxMonitor.jsx';
 import { DEFAULT_NETWORK } from './config/networks.js';
 import { saveSession, getSessions } from './utils/storageUtils.js';
 
@@ -13,6 +16,8 @@ const TABS = [
   { id: 'simulator', label: 'TX Simulator', icon: '◈' },
   { id: 'stress', label: 'Stress Test', icon: '⚡' },
   { id: 'dashboard', label: 'Dashboard', icon: '◎' },
+  { id: 'gas', label: 'Gas Monitor', icon: '⛽' },
+  { id: 'compare', label: 'Compare', icon: '⚖' },
 ];
 
 const LOG_LEVEL_META = {
@@ -46,7 +51,11 @@ export default function App() {
   // Global activity log
   const [logs, setLogs] = useState([]);
   const [logOpen, setLogOpen] = useState(false);
+  const [logView, setLogView] = useState('activity'); // 'activity' | 'monitor'
   const logListRef = useRef(null);
+
+  // Replay trigger
+  const [replayConfig, setReplayConfig] = useState(null);
 
   // Handle Theme Toggle
   const toggleTheme = useCallback(() => {
@@ -250,7 +259,7 @@ export default function App() {
         style={{ paddingBottom: logOpen ? '18rem' : '4rem' }}
       >
         {activeTab === 'wallets' && (
-          <WalletGenerator network={network} addLog={addLog} />
+          <WalletGenerator network={network} addLog={addLog} masterKey={masterKey} />
         )}
         {activeTab === 'simulator' && (
           <TransactionSimulator
@@ -259,6 +268,8 @@ export default function App() {
             addLog={addLog}
             tokenAddress={tokenAddress}
             masterKey={masterKey}
+            replayConfig={replayConfig}
+            onReplayConsumed={() => setReplayConfig(null)}
           />
         )}
         {activeTab === 'stress' && (
@@ -276,7 +287,14 @@ export default function App() {
             stats={simStats}
             config={simConfig}
             tokenAddress={tokenAddress}
+            network={network}
           />
+        )}
+        {activeTab === 'gas' && (
+          <GasEstimation network={network} addLog={addLog} />
+        )}
+        {activeTab === 'compare' && (
+          <NetworkComparison addLog={addLog} />
         )}
       </main>
 
@@ -292,9 +310,17 @@ export default function App() {
           setSimConfig(session.config);
           setNetwork(session.network);
           setTokenAddress(session.tokenAddress || '');
-          setActiveTab('dashboard'); // Jump to dashboard to view
-          setHistoryOpen(false); // Close panel
+          setActiveTab('dashboard');
+          setHistoryOpen(false);
           addLog(`Loaded past session from ${new Date(session.timestamp).toLocaleTimeString()}`, 'success');
+        }}
+        onReplaySession={(session) => {
+          setReplayConfig(session.config);
+          setNetwork(session.network);
+          setTokenAddress(session.tokenAddress || '');
+          setActiveTab('simulator');
+          setHistoryOpen(false);
+          addLog(`Replaying session from ${new Date(session.timestamp).toLocaleTimeString()}`, 'info');
         }}
       />
 
@@ -325,6 +351,25 @@ export default function App() {
             <span className="text-xs font-mono font-semibold text-theme-secondary uppercase tracking-widest flex-shrink-0 transition-colors">
               Activity Log
             </span>
+            {/* Toggle between Activity and Monitor */}
+            <div className="flex gap-1 ml-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setLogView('activity'); }}
+                className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase transition-all ${
+                  logView === 'activity' ? 'bg-indigo-500/20 text-indigo-400' : 'text-theme-secondary hover:text-theme-primary'
+                }`}
+              >
+                Log
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLogView('monitor'); }}
+                className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase transition-all ${
+                  logView === 'monitor' ? 'bg-indigo-500/20 text-indigo-400' : 'text-theme-secondary hover:text-theme-primary'
+                }`}
+              >
+                Monitor
+              </button>
+            </div>
             {logs.length > 0 && (
               <span
                 className="px-2 py-0.5 text-[10px] rounded-full font-mono flex-shrink-0 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]"
@@ -359,33 +404,39 @@ export default function App() {
           <div
             className="max-w-7xl mx-auto px-4 pb-3 border-t border-theme-subtle transition-colors duration-200"
           >
-            <div
-              ref={logListRef}
-              className="overflow-y-auto py-2 space-y-0.5"
-              style={{ height: '13rem' }}
-            >
-              {logs.length === 0 ? (
-                <div className="text-xs text-theme-secondary opacity-70 py-8 text-center font-mono transition-colors">
-                  No activity yet — use the tools above to generate log entries.
-                </div>
-              ) : (
-                [...logs].reverse().map(entry => {
-                  const meta = LOG_LEVEL_META[entry.level] ?? LOG_LEVEL_META.info;
-                  return (
-                    <div
-                      key={entry.id}
-                      className="flex items-start gap-2 text-xs font-mono py-0.5 px-1 rounded transition-colors"
-                    >
-                      <span className="text-theme-secondary flex-shrink-0 w-16 tabular-nums transition-colors">{entry.time}</span>
-                      <span className={`flex-shrink-0 font-bold ${meta.textClass}`} style={{ minWidth: '3.5rem' }}>
-                        {meta.label}
-                      </span>
-                      <span className={meta.dimClass}>{entry.message}</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            {logView === 'activity' ? (
+              <div
+                ref={logListRef}
+                className="overflow-y-auto py-2 space-y-0.5"
+                style={{ height: '13rem' }}
+              >
+                {logs.length === 0 ? (
+                  <div className="text-xs text-theme-secondary opacity-70 py-8 text-center font-mono transition-colors">
+                    No activity yet — use the tools above to generate log entries.
+                  </div>
+                ) : (
+                  [...logs].reverse().map(entry => {
+                    const meta = LOG_LEVEL_META[entry.level] ?? LOG_LEVEL_META.info;
+                    return (
+                      <div
+                        key={entry.id}
+                        className="flex items-start gap-2 text-xs font-mono py-0.5 px-1 rounded transition-colors"
+                      >
+                        <span className="text-theme-secondary flex-shrink-0 w-16 tabular-nums transition-colors">{entry.time}</span>
+                        <span className={`flex-shrink-0 font-bold ${meta.textClass}`} style={{ minWidth: '3.5rem' }}>
+                          {meta.label}
+                        </span>
+                        <span className={meta.dimClass}>{entry.message}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            ) : (
+              <div className="py-2" style={{ height: '13rem' }}>
+                <TxMonitor network={network} addLog={addLog} />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -112,12 +112,18 @@ export async function* runSimulation(config, wallets) {
     const gas = estimateFee(network, congestion);
     let rpcGasUsed = gas.gasUsed;
 
+    let txHash = null;
+    let confirmationMs = null;
+
     if (isLive) {
       // ON-CHAIN EXECUTION
+      const startTime = Date.now();
       if (isSell) {
         txType = 'sell';
         try {
-          await executeSell(wallet.privateKey, tokenAddress, network);
+          const receipt = await executeSell(wallet.privateKey, tokenAddress, network);
+          txHash = receipt?.hash;
+          confirmationMs = Date.now() - startTime;
           success = true;
         } catch (err) {
           success = false;
@@ -128,7 +134,9 @@ export async function* runSimulation(config, wallets) {
         try {
           // We need money to buy
           await fundWallet(masterKey, wallet.address, amountEth + 0.005, network); // amount + gas
-          await executeBuy(wallet.privateKey, amountEth, tokenAddress, network);
+          const receipt = await executeBuy(wallet.privateKey, amountEth, tokenAddress, network);
+          txHash = receipt?.hash;
+          confirmationMs = Date.now() - startTime;
           success = true;
         } catch (err) {
           success = false;
@@ -198,6 +206,8 @@ export async function* runSimulation(config, wallets) {
       congestion,
       poolReserveToken: +poolReserveToken.toFixed(2),
       poolReserveEth: +poolReserveEth.toFixed(6),
+      txHash,
+      confirmationMs,
     };
 
     yield result;
