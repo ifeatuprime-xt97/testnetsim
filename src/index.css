@@ -22,21 +22,21 @@
   }
 
   .dark {
-    /* Deep rich indigo/midnight palette */
-    --bg-base: #030014;
-    --bg-surface: rgba(15, 15, 30, 0.4);
-    --bg-elevated: rgba(25, 25, 45, 0.6);
-    --border-subtle: rgba(255, 255, 255, 0.05);
-    --border-default: rgba(255, 255, 255, 0.1);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #475569;
+    /* Softer slate-navy palette — easier on the eyes */
+    --bg-base: #0f1729;
+    --bg-surface: rgba(30, 41, 66, 0.55);
+    --bg-elevated: rgba(40, 52, 80, 0.65);
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --border-default: rgba(255, 255, 255, 0.18);
+    --text-primary: #f1f5f9;
+    --text-secondary: #a5b4cc;
+    --text-muted: #64748b;
 
     --btn-primary: #6366f1;
     --btn-primary-hover: #4f46e5;
-    --btn-secondary: rgba(255, 255, 255, 0.05);
-    --btn-secondary-hover: rgba(255, 255, 255, 0.1);
-    --btn-secondary-border: rgba(255, 255, 255, 0.1);
+    --btn-secondary: rgba(255, 255, 255, 0.08);
+    --btn-secondary-hover: rgba(255, 255, 255, 0.14);
+    --btn-secondary-border: rgba(255, 255, 255, 0.15);
     --btn-secondary-text: #cbd5e1;
   }
 
