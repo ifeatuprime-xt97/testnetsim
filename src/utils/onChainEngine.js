@@ -6,6 +6,7 @@ import bs58 from 'bs58';
 const ERC20_ABI = [
     "function approve(address spender, uint256 amount) external returns (bool)",
     "function balanceOf(address account) external view returns (uint256)",
+    "function allowance(address owner, address spender) external view returns (uint256)",
     "function decimals() external view returns (uint8)"
 ];
 
@@ -13,6 +14,8 @@ const ERC20_ABI = [
 const ROUTER_ABI = [
     "function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)",
     "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+    "function swapExactETHForTokensSupportingFeeOnTransferTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable",
+    "function swapExactTokensForETHSupportingFeeOnTransferTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external",
     "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"
 ];
 
@@ -97,10 +100,19 @@ export async function executeBuy(walletKey, amountEth, tokenAddress, network) {
     const path = [network.weth, tokenAddress];
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 mins
 
+    // Try to calculate amounts out for 5% slippage protection
+    let amountOutMin = 0n;
+    try {
+        const amounts = await router.getAmountsOut(amountInWei, path);
+        amountOutMin = (amounts[1] * 95n) / 100n; // 5% max slippage
+    } catch (err) {
+        console.warn("Failed to fetch amounts out, defaulting to 0 amountOutMin");
+    }
+
     // Try to estimate gas first, if it fails, the transaction will likely revert.
     try {
-        await router.swapExactETHForTokens.estimateGas(
-            0, // amountOutMin = 0 (accepting max slippage for the simulation)
+        await router.swapExactETHForTokensSupportingFeeOnTransferTokens.estimateGas(
+            amountOutMin,
             path,
             wallet.address,
             deadline,
@@ -110,8 +122,8 @@ export async function executeBuy(walletKey, amountEth, tokenAddress, network) {
         throw new Error(`Execution reverted: ${err.shortMessage || err.message}`);
     }
 
-    const tx = await router.swapExactETHForTokens(
-        0,
+    const tx = await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+        amountOutMin,
         path,
         wallet.address,
         deadline,
@@ -141,19 +153,30 @@ export async function executeSell(walletKey, tokenAddress, network) {
         throw new Error("Wallet has 0 tokens to sell");
     }
 
-    // 2. Approve Router to spend tokens (if not already approved)
-    // For simulation speed, we just approve max every time
-    const approveTx = await token.approve(network.dexRouter, ethers.MaxUint256);
-    await approveTx.wait();
+    // 2. Check Allowance & Approve ONLY if necessary
+    const allowance = await token.allowance(wallet.address, network.dexRouter);
+    if (allowance < balance) {
+        const approveTx = await token.approve(network.dexRouter, ethers.MaxUint256);
+        await approveTx.wait();
+    }
 
     // 3. Swap Tokens for ETH
     const path = [tokenAddress, network.weth];
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 mins
 
+    // Try to calculate amounts out for 5% slippage protection
+    let amountOutMin = 0n;
     try {
-        await router.swapExactTokensForETH.estimateGas(
+        const amounts = await router.getAmountsOut(balance, path);
+        amountOutMin = (amounts[1] * 95n) / 100n; // 5% max slippage
+    } catch (err) {
+        console.warn("Failed to fetch amounts out, defaulting to 0 amountOutMin");
+    }
+
+    try {
+        await router.swapExactTokensForETHSupportingFeeOnTransferTokens.estimateGas(
             balance,
-            0, // amountOutMin = 0 
+            amountOutMin,
             path,
             wallet.address,
             deadline
@@ -162,9 +185,9 @@ export async function executeSell(walletKey, tokenAddress, network) {
         throw new Error(`Execution reverted: ${err.shortMessage || err.message}`);
     }
 
-    const tx = await router.swapExactTokensForETH(
+    const tx = await router.swapExactTokensForETHSupportingFeeOnTransferTokens(
         balance,
-        0,
+        amountOutMin,
         path,
         wallet.address,
         deadline
@@ -245,9 +268,19 @@ export async function sweepFunds(wallets, masterKey, tokenAddress, network, onPr
                 // 2. Sweep Native Balance
                 const balance = await provider.getBalance(wallet.address);
                 if (balance > 0n) {
-                    // Estimate gas for a simple transfer
-                    const gasPrice = (await provider.getFeeData()).gasPrice || ethers.parseUnits('1', 'gwei');
-                    const gasLimit = 21000n; // Standard ETH transfer cost
+                    const feeData = await provider.getFeeData();
+                    const gasPrice = feeData.gasPrice || ethers.parseUnits('1', 'gwei');
+                    
+                    let gasLimit = 21000n; // default starting point
+                    try {
+                        gasLimit = await provider.estimateGas({
+                            to: masterWallet.address,
+                            value: 100n // estimate with tiny amount
+                        });
+                    } catch (err) {
+                        // ignore and use 21000 as fallback
+                    }
+
                     const txCost = gasPrice * gasLimit;
 
                     if (balance > txCost) {

@@ -8,8 +8,12 @@ import HistoryPanel from './components/HistoryPanel.jsx';
 import GasEstimation from './components/GasEstimation.jsx';
 import NetworkComparison from './components/NetworkComparison.jsx';
 import TxMonitor from './components/TxMonitor.jsx';
+import PricingModal from './components/PricingModal.jsx';
 import { DEFAULT_NETWORK } from './config/networks.js';
 import { saveSession, getSessions } from './utils/storageUtils.js';
+import { usePricingTier } from './hooks/usePricingTier.js';
+import { ethers } from 'ethers';
+import { connectWallet, ensureNetwork } from './utils/ethereumUtils.js';
 
 const TABS = [
   { id: 'wallets', label: 'Wallet Generator', icon: '⬡' },
@@ -43,6 +47,104 @@ export default function App() {
   const [tokenAddress, setTokenAddress] = useState('');
   const [masterKey, setMasterKey] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // Funding Strategy State
+  const [fundingMode, setFundingMode] = useState('privateKey'); // 'privateKey' | 'connectWallet'
+  const [connectedAccount, setConnectedAccount] = useState(null);
+  const [sessionWallet, setSessionWallet] = useState(null);
+  const [isFundingSession, setIsFundingSession] = useState(false);
+  const [sessionFundingAmount, setSessionFundingAmount] = useState('0.1');
+
+  // Web3 Logic
+  const handleConnectWallet = async () => {
+    try {
+      const { account, provider } = await connectWallet();
+      setConnectedAccount(account);
+      
+      // Setup bridge if missing
+      if (!sessionWallet) {
+        const newSessionWallet = ethers.Wallet.createRandom();
+        setSessionWallet(newSessionWallet);
+        setMasterKey(newSessionWallet.privateKey); 
+      }
+      
+      if (network?.chainId) {
+         try { await ensureNetwork(provider, network.chainId); } catch(e) { console.warn(e); }
+      }
+      addLog(`Connected Web3 Wallet: ${account.slice(0,6)}...${account.slice(-4)}`, 'success');
+    } catch (err) {
+      addLog(`Wallet connection failed: ${err.message}`, 'error');
+    }
+  };
+  
+  const handleFundSession = async () => {
+    if (!connectedAccount || !sessionWallet) return;
+    setIsFundingSession(true);
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const tx = await signer.sendTransaction({
+        to: sessionWallet.address,
+        value: ethers.parseEther(sessionFundingAmount.toString())
+      });
+      addLog(`Funding session bridge... Tx: ${tx.hash.slice(0,8)}...`, 'info');
+      await tx.wait();
+      addLog(`Session Bridge Wallet successfully funded with ${sessionFundingAmount} ETH!`, 'success');
+    } catch (err) {
+      addLog(`Failed to fund session window: ${err.shortMessage || err.message}`, 'error');
+    } finally {
+      setIsFundingSession(false);
+    }
+  };
+  
+  const handleSweepSession = async () => {
+      if (!connectedAccount || !sessionWallet) return;
+      try {
+          // Send remaining gas from the browser-held session key back to the injected user account
+          const provider = new ethers.JsonRpcProvider(network.rpc);
+          const wallet = new ethers.Wallet(sessionWallet.privateKey, provider);
+          const balance = await provider.getBalance(wallet.address);
+          
+          if (balance > 0n) {
+             const gasPrice = (await provider.getFeeData()).gasPrice || ethers.parseUnits('1', 'gwei');
+             let gasLimit = 21000n;
+             try { gasLimit = await provider.estimateGas({to: connectedAccount, value: 100n}); } catch(e) {}
+             const txCost = gasPrice * gasLimit;
+             
+             if (balance > txCost) {
+                 const tx = await wallet.sendTransaction({
+                     to: connectedAccount,
+                     value: balance - txCost,
+                     gasPrice, gasLimit
+                 });
+                 addLog(`Sweeping session bridge...`, 'info');
+                 await tx.wait();
+                 addLog(`Successfully retrieved session funds.`, 'success');
+             } else {
+                 addLog(`Session bridge balance too low to sweep gas.`, 'warn');
+             }
+          } else {
+             addLog(`Session bridge is already empty.`, 'warn');
+          }
+      } catch (err) {
+          addLog(`Session sweep failed: ${err.message}`, 'error');
+      }
+  };
+
+  // Pricing tier state
+  const {
+    currentTier,
+    activeUntil,
+    showPricingModal,
+    selectTier,
+    resetTier,
+    openPricingModal,
+    closePricingModal,
+    getWalletLimit,
+    canUseWallets,
+    getRemainingTime,
+    isPaidTier,
+  } = usePricingTier();
 
   // History state
   const [sessionHistory, setSessionHistory] = useState([]);
@@ -231,25 +333,93 @@ export default function App() {
             </span>
           )}
 
-          {/* Master Wallet Key Input */}
-          <div className="flex items-center gap-3 ml-auto border-l border-theme-subtle pl-4 transition-colors duration-200">
-            <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0">
-              Master Key
-            </span>
-            <input
-              type="password"
-              className="input-field py-1.5 text-xs font-mono w-48"
-              placeholder="Private key (for gas)"
-              value={masterKey}
-              onChange={e => setMasterKey(e.target.value.trim())}
-              spellCheck={false}
-            />
+          {/* Funding Method Toggle UI */}
+          <div className="flex items-stretch ml-auto border-l border-theme-subtle pl-4 transition-colors duration-200">
+             <div className="flex bg-theme-base rounded overflow-hidden mr-3 border border-theme-subtle">
+               <button 
+                  onClick={() => setFundingMode('privateKey')} 
+                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-colors ${fundingMode === 'privateKey' ? 'bg-indigo-600 text-white' : 'text-theme-secondary hover:bg-theme-elevated'}`}
+               >
+                  Private Key
+               </button>
+               <button 
+                  onClick={() => setFundingMode('connectWallet')} 
+                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-colors ${fundingMode === 'connectWallet' ? 'bg-indigo-600 text-white' : 'text-theme-secondary hover:bg-theme-elevated'}`}
+               >
+                  Connect Wallet
+               </button>
+             </div>
+             
+             {/* Dynamic Inputs */}
+             {fundingMode === 'privateKey' ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0">
+                    Key
+                  </span>
+                  <input
+                    type="password"
+                    className="input-field py-1.5 text-xs font-mono w-48"
+                    placeholder="Private key (for gas)"
+                    value={masterKey}
+                    onChange={e => setMasterKey(e.target.value.trim())}
+                    spellCheck={false}
+                  />
+                </div>
+             ) : (
+                <div className="flex items-center gap-2">
+                    {!connectedAccount ? (
+                        <button onClick={handleConnectWallet} className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider bg-theme-primary text-black shadow hover:brightness-110 transition-all">
+                           Connect MetaMask
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] text-emerald-400 font-mono bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20 shadow-inner">
+                              {connectedAccount.slice(0,6)}...{connectedAccount.slice(-4)}
+                           </span>
+                           
+                           {sessionWallet && (
+                              <div className="flex items-center gap-2 ml-2 pl-2 border-l border-theme-subtle">
+                                 <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    value={sessionFundingAmount} 
+                                    onChange={e => setSessionFundingAmount(e.target.value)}
+                                    className="input-field py-1 text-xs w-16 text-center"
+                                    title="ETH to fund session"
+                                 />
+                                 <button 
+                                    onClick={handleFundSession} 
+                                    disabled={isFundingSession}
+                                    className={`text-[10px] px-2 py-1 rounded font-bold uppercase transition-colors ${isFundingSession ? 'bg-theme-base text-theme-secondary' : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'}`}
+                                 >
+                                    {isFundingSession ? 'Funding...' : 'Fund Session'}
+                                 </button>
+                                 <button 
+                                    onClick={handleSweepSession} 
+                                    className="text-[10px] px-2 py-1 rounded bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors"
+                                    title="Sweep remaining gas back to MetaMask"
+                                 >
+                                    Sweep
+                                 </button>
+                                 <span className="text-[10px] text-theme-secondary font-mono bg-theme-base px-2 py-1 rounded border border-theme-subtle" title="Session Bridge Wallet (Bots draw gas from here)">
+                                    Bridge: {sessionWallet.address.slice(0,6)}...
+                                 </span>
+                              </div>
+                           )}
+                        </div>
+                    )}
+                </div>
+             )}
           </div>
         </div>
 
-        {/* Why Private Key Explanation */}
-        <div className="max-w-7xl mx-auto px-4 pb-2 text-xs text-theme-secondary max-w-2xl text-left border-l-2 border-theme-subtle ml-4 mb-2 mt-1 transition-colors duration-200">
-          <strong className="text-theme-primary">Why a Private Key?</strong> To simulate load, the system generates random temporary wallets that act as independent buyers/sellers (to avoid 500 MetaMask popups). A master wallet is needed to automatically fund these bots with gas so they can submit transactions simultaneously. <strong>Please only use a dedicated testnet wallet with ZERO real funds on mainnet.</strong>
+        {/* Funding Strategy Explanation */}
+        <div className="max-w-7xl mx-auto px-4 pb-2 text-[11px] leading-relaxed text-theme-secondary max-w-3xl text-left border-l-2 border-theme-subtle ml-4 mb-2 mt-2 transition-colors duration-200">
+          {fundingMode === 'privateKey' ? (
+             <><strong className="text-theme-primary">Private Key Mode:</strong> To simulate real load, the system spawns random temporary browser wallets. A master wallet is needed to autonomously fund these bots with gas so they can submit transactions. Paste a dedicated testnet wallet's private key. <span className="text-amber-500 font-bold">Never use a mainnet wallet.</span></>
+          ) : (
+             <><strong className="text-theme-primary">Session Bridge Mode:</strong> Connect your wallet to generate a temporary <span className="font-mono text-indigo-400">Session Wallet</span>. Send it a single bulk funding transaction via MetaMask. This bridge silently manages and funds all the simulation bots for you, bypassing the UX nightmare of clicking "Approve" 500 times. Click <strong>SWEEP</strong> when done to immediately retrieve all unused gas.</>
+          )}
         </div>
       </div>
 
@@ -259,7 +429,15 @@ export default function App() {
         style={{ paddingBottom: logOpen ? '18rem' : '4rem' }}
       >
         {activeTab === 'wallets' && (
-          <WalletGenerator network={network} addLog={addLog} masterKey={masterKey} />
+          <WalletGenerator 
+            network={network} 
+            addLog={addLog} 
+            masterKey={masterKey}
+            currentTier={currentTier}
+            activeUntil={activeUntil}
+            getWalletLimit={getWalletLimit}
+            openPricingModal={openPricingModal}
+          />
         )}
         {activeTab === 'simulator' && (
           <TransactionSimulator
@@ -270,6 +448,11 @@ export default function App() {
             masterKey={masterKey}
             replayConfig={replayConfig}
             onReplayConsumed={() => setReplayConfig(null)}
+            currentTier={currentTier}
+            activeUntil={activeUntil}
+            getWalletLimit={getWalletLimit}
+            canUseWallets={canUseWallets}
+            openPricingModal={openPricingModal}
           />
         )}
         {activeTab === 'stress' && (
@@ -333,6 +516,32 @@ export default function App() {
           <div className="flex items-center gap-4">
             <span className="badge-testnet">⚠ TESTNET ONLY</span>
             <span>No mainnet support · No real funds at risk</span>
+            {currentTier?.tier && (
+              <button
+                onClick={openPricingModal}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  {currentTier.tier.name} Plan
+                </span>
+                {activeUntil && activeUntil > Date.now() && (
+                  <span className="text-[9px] opacity-70">
+                    · {getRemainingTime()}h left
+                  </span>
+                )}
+              </button>
+            )}
+            {!currentTier?.tier && (
+              <button
+                onClick={openPricingModal}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-theme-elevated border border-theme-subtle text-theme-secondary hover:text-theme-primary transition-colors"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  Free Plan
+                </span>
+                <span className="text-[9px]">· Upgrade</span>
+              </button>
+            )}
           </div>
         </div>
       </footer>
@@ -440,6 +649,15 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* ── Pricing Modal ────────────────────────────────────────── */}
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={closePricingModal}
+        onSelectTier={selectTier}
+        currentTier={currentTier}
+        activeUntil={activeUntil}
+      />
     </div>
   );
 }

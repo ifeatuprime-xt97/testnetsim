@@ -21,7 +21,15 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function WalletGenerator({ network, addLog, masterKey }) {
+export default function WalletGenerator({ 
+  network, 
+  addLog, 
+  masterKey,
+  currentTier,
+  activeUntil,
+  getWalletLimit,
+  openPricingModal,
+}) {
   const [count, setCount] = useState(10);
   const [wallets, setWallets] = useState([]);
   const [revealedKeys, setRevealedKeys] = useState({});
@@ -34,11 +42,22 @@ export default function WalletGenerator({ network, addLog, masterKey }) {
   const net = NETWORKS[network];
   const keyType = net?.isSolana ? 'ed25519' : 'secp256k1';
   const keyLabel = net?.isSolana ? 'Private Key (base58, Phantom-compatible)' : 'Private Key';
+  
+  // Get wallet limit from pricing tier
+  const walletLimit = getWalletLimit?.() || 5;
+  const exceedsLimit = count > walletLimit;
 
   // Show at most this many rows in the table — full list always available via export
   const TABLE_DISPLAY_LIMIT = 200;
 
   function handleGenerate() {
+    // Check wallet limit before generating
+    if (exceedsLimit) {
+      addLog?.(`Wallet limit exceeded: ${count} > ${walletLimit}. Please upgrade your plan.`, 'error');
+      openPricingModal?.();
+      return;
+    }
+    
     setGenerating(true);
     setRevealedKeys({});
     setTimeout(() => {
@@ -174,7 +193,25 @@ export default function WalletGenerator({ network, addLog, masterKey }) {
               value={count}
               onChange={e => setCount(Math.min(10000, Math.max(1, +e.target.value)))}
             />
-            <p className="text-xs text-theme-secondary mt-1 transition-colors">1–10,000 wallets</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-theme-secondary transition-colors">
+                {exceedsLimit ? (
+                  <span className="text-amber-400">
+                    ⚠ Your plan limit: {walletLimit} wallets
+                  </span>
+                ) : (
+                  `1–10,000 (your limit: ${walletLimit})`
+                )}
+              </p>
+              {exceedsLimit && (
+                <button 
+                  onClick={openPricingModal}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors font-medium"
+                >
+                  Upgrade →
+                </button>
+              )}
+            </div>
           </div>
 
           <div>

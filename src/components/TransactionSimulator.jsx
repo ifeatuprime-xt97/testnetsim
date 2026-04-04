@@ -36,7 +36,20 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function TransactionSimulator({ network, onResultsChange, addLog, tokenAddress, masterKey, replayConfig, onReplayConsumed }) {
+export default function TransactionSimulator({ 
+  network, 
+  onResultsChange, 
+  addLog, 
+  tokenAddress, 
+  masterKey, 
+  replayConfig, 
+  onReplayConsumed,
+  currentTier,
+  activeUntil,
+  getWalletLimit,
+  canUseWallets,
+  openPricingModal,
+}) {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [wallets, setWallets] = useState([]);
   const [results, setResults] = useState([]);
@@ -63,8 +76,21 @@ export default function TransactionSimulator({ network, onResultsChange, addLog,
 
   const cfg = v => setConfig(prev => ({ ...prev, ...v }));
 
+  // Check wallet limit and prompt upgrade if needed
+  const walletLimit = getWalletLimit?.() || 5;
+  const exceedsLimit = config.numWallets > walletLimit;
+  const isPaidTierActive = currentTier?.tier?.price > 0 && activeUntil && activeUntil > Date.now();
+
   const handleRun = useCallback(async () => {
     if (isRunning) return;
+    
+    // Check wallet limit before running
+    if (!canUseWallets?.(config.numWallets)) {
+      addLog?.(`Wallet limit exceeded: ${config.numWallets} > ${walletLimit}. Please upgrade your plan.`, 'error');
+      openPricingModal?.();
+      return;
+    }
+    
     setIsRunning(true);
     abortRef.current = false;
 
@@ -195,9 +221,33 @@ export default function TransactionSimulator({ network, onResultsChange, addLog,
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="label">Wallets</label>
-            <input type="number" className="input-field" min={1} max={10000} value={config.numWallets}
-              onChange={e => cfg({ numWallets: Math.min(10000, +e.target.value) })} />
-            <p className="text-xs text-theme-secondary mt-1 transition-colors">up to 10,000</p>
+            <input 
+              type="number" 
+              className="input-field" 
+              min={1} 
+              max={10000} 
+              value={config.numWallets}
+              onChange={e => cfg({ numWallets: Math.min(10000, +e.target.value) })} 
+            />
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-theme-secondary transition-colors">
+                {exceedsLimit ? (
+                  <span className="text-amber-400">
+                    ⚠ Your plan limit: {walletLimit} wallets
+                  </span>
+                ) : (
+                  `up to 10,000 (your limit: ${walletLimit})`
+                )}
+              </p>
+              {exceedsLimit && (
+                <button 
+                  onClick={openPricingModal}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors font-medium"
+                >
+                  Upgrade →
+                </button>
+              )}
+            </div>
           </div>
           <div>
             <label className="label">Total Transactions</label>
