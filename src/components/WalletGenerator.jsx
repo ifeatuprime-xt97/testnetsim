@@ -57,6 +57,11 @@ export default function WalletGenerator({
       openPricingModal?.();
       return;
     }
+
+    if (count > 10000 && navigator.deviceMemory && navigator.deviceMemory < 8) {
+       const confirmed = window.confirm(`WARNING: Your device appears to have ~${navigator.deviceMemory}GB of RAM. Generating ${count} cryptographic wallets in the browser simultaneously may cause a memory crash. Do you wish to proceed at your own risk?`);
+       if (!confirmed) return;
+    }
     
     setGenerating(true);
     setRevealedKeys({});
@@ -146,7 +151,7 @@ export default function WalletGenerator({
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
             <ol className="space-y-3 mt-4">
               <GuideStep n={1} title="Select a network" desc="Use the network dropdown in the header. Each network uses different key types — EVM chains use secp256k1 (ethers.js), Solana uses ed25519 (tweetnacl)." />
-              <GuideStep n={2} title="Set wallet count" desc="Enter 1–10,000. More wallets give wider address spread when simulating distributed trading. For counts above 200, the table preview is limited to the first 200 rows — use Export to get all keys." />
+              <GuideStep n={2} title="Set wallet count" desc="Enter 1–50,000. More wallets give wider address spread when simulating distributed trading. For counts above 200, the table preview is limited to the first 200 rows — use Export to get all keys." />
               <GuideStep n={3} title="Click Generate" desc="Keypairs are created instantly in browser memory — no RPC calls, no external requests. Nothing is stored or transmitted." />
               <GuideStep n={4} title="Export immediately" desc="Click Export CSV or Export JSON before closing or refreshing. Wallet keys exist only in your browser's JS memory — they are permanently lost on page reload." />
               <GuideStep n={5} title="Fund from faucet" desc="Use the faucet link below to get testnet tokens. Funding is required for live testnet TX simulation, but not needed for simulation-mode analysis." />
@@ -179,7 +184,7 @@ export default function WalletGenerator({
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-theme-primary transition-colors">Wallet Generator</h2>
-          <span className="text-xs text-theme-secondary font-mono transition-colors">{keyType} · max 10,000</span>
+          <span className="text-xs text-theme-secondary font-mono transition-colors">{keyType} · max 50,000</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
@@ -189,9 +194,9 @@ export default function WalletGenerator({
               type="number"
               className="input-field"
               min={1}
-              max={10000}
+              max={50000}
               value={count}
-              onChange={e => setCount(Math.min(10000, Math.max(1, +e.target.value)))}
+              onChange={e => setCount(Math.min(50000, Math.max(1, +e.target.value)))}
             />
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-theme-secondary transition-colors">
@@ -200,7 +205,7 @@ export default function WalletGenerator({
                     ⚠ Your plan limit: {walletLimit} wallets
                   </span>
                 ) : (
-                  `1–10,000 (your limit: ${walletLimit})`
+                  `1–50,000 (your limit: ${walletLimit})`
                 )}
               </p>
               {exceedsLimit && (
@@ -212,6 +217,11 @@ export default function WalletGenerator({
                 </button>
               )}
             </div>
+            {count > 10000 && navigator.deviceMemory && navigator.deviceMemory < 8 && (
+                <div className="mt-2 text-[10px] text-red-400 bg-red-400/10 border border-red-400/20 px-2 py-1.5 rounded font-mono shadow-inner">
+                   ⚠ <b>RAM WARNING:</b> Your device (~{navigator.deviceMemory}GB RAM) may struggle to generate {count.toLocaleString()} wallets. Proceed with caution.
+                </div>
+            )}
           </div>
 
           <div>

@@ -30,8 +30,9 @@ export async function verifyETHPayment(txHash, toAddress, expectedAmount) {
     }
 
     const sentAmount = ethers.formatEther(tx.value);
-    if (parseFloat(sentAmount) < expectedAmount) {
-      return { verified: false, error: `Insufficient amount. Sent: ${sentAmount} ETH, Expected: ${expectedAmount} ETH` };
+    const toleranceAmount = expectedAmount * 0.975; // 2.5% slippage buffer for price fluctuations
+    if (parseFloat(sentAmount) < toleranceAmount) {
+      return { verified: false, error: `Insufficient amount. Sent: ${sentAmount} ETH, Expected ~${expectedAmount} ETH` };
     }
 
     return {
@@ -100,8 +101,9 @@ export async function verifySOLPayment(txHash, toAddress, expectedAmount) {
       });
     }
 
-    if (totalAmount < expectedAmount) {
-      return { verified: false, error: `Insufficient amount. Sent: ${totalAmount} SOL, Expected: ${expectedAmount} SOL` };
+    const toleranceAmount = expectedAmount * 0.975; // 2.5% slippage buffer for price fluctuations
+    if (totalAmount < toleranceAmount) {
+      return { verified: false, error: `Insufficient amount. Sent: ${totalAmount} SOL, Expected ~${expectedAmount} SOL` };
     }
 
     return {

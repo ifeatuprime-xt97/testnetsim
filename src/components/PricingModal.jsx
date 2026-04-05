@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { verifyETHPayment, verifySOLPayment } from '../utils/paymentVerification.js';
 
-const PRICING_TIERS = [
+const BASE_TIERS = [
   {
     id: 'free',
     name: 'Free',
-    priceETH: 0,
-    priceSOL: 0,
+    priceUSD: 0,
     wallets: Number(import.meta.env.VITE_FREE_TIER_WALLETS || 5),
     duration: 'Unlimited',
     description: 'Perfect for testing the waters',
@@ -21,13 +20,12 @@ const PRICING_TIERS = [
   {
     id: 'basic',
     name: 'Basic',
-    priceETH: Number(import.meta.env.VITE_BASIC_TIER_PRICE_ETH || 0.05),
-    priceSOL: Number(import.meta.env.VITE_BASIC_TIER_PRICE_SOL || 3),
-    wallets: Number(import.meta.env.VITE_BASIC_TIER_WALLETS || 100),
+    priceUSD: Number(import.meta.env.VITE_BASIC_TIER_PRICE_USD || 25),
+    wallets: Number(import.meta.env.VITE_BASIC_TIER_WALLETS || 1000),
     duration: `${Number(import.meta.env.VITE_BASIC_TIER_DURATION || 24)} hours`,
     description: 'For serious token creators',
     features: [
-      'Up to 100 wallets',
+      'Up to 1,000 wallets',
       '1 simulation session',
       'Live testnet execution',
       '24-hour access',
@@ -38,18 +36,34 @@ const PRICING_TIERS = [
   {
     id: 'pro',
     name: 'Pro',
-    priceETH: Number(import.meta.env.VITE_PRO_TIER_PRICE_ETH || 0.12),
-    priceSOL: Number(import.meta.env.VITE_PRO_TIER_PRICE_SOL || 8),
+    priceUSD: Number(import.meta.env.VITE_PRO_TIER_PRICE_USD || 50),
     wallets: Number(import.meta.env.VITE_PRO_TIER_WALLETS || 10000),
     duration: `${Number(import.meta.env.VITE_PRO_TIER_DURATION || 24)} hours`,
     description: 'Unlimited power testing',
     features: [
-      'Unlimited wallets (up to 10,000)',
+      'Up to 10,000 wallets',
       'Unlimited simulations',
       'Live testnet execution',
       '24-hour access',
       'Advanced analytics',
       'Priority support',
+    ],
+    highlighted: false,
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    priceUSD: Number(import.meta.env.VITE_ENTERPRISE_TIER_PRICE_USD || 100),
+    wallets: Number(import.meta.env.VITE_ENTERPRISE_TIER_WALLETS || 50000),
+    duration: `${Number(import.meta.env.VITE_ENTERPRISE_TIER_DURATION || 24)} hours`,
+    description: 'Maximum scale deployment',
+    features: [
+      'Up to 50,000 wallets',
+      'Unlimited simulations',
+      'Live testnet execution',
+      '24-hour access',
+      'Advanced analytics',
+      'Premium hardware support',
     ],
     highlighted: false,
   },
@@ -61,6 +75,30 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
   const [paymentMethod, setPaymentMethod] = useState('ETH'); // 'ETH' or 'SOL'
   const [paymentSent, setPaymentSent] = useState(false);
   const [txHash, setTxHash] = useState('');
+  const [cryptoQuotes, setCryptoQuotes] = useState({ ETH: null, SOL: null });
+
+  useEffect(() => {
+    if (isOpen && !cryptoQuotes.ETH) {
+      fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana&vs_currencies=usd')
+        .then(res => res.json())
+        .then(data => {
+            setCryptoQuotes({
+               ETH: data.ethereum.usd,
+               SOL: data.solana.usd
+            });
+        })
+        .catch(err => {
+            console.error("Failed to fetch crypto prices", err);
+            setCryptoQuotes({ ETH: 3500, SOL: 150 });
+        });
+    }
+  }, [isOpen]);
+
+  const pricingTiers = BASE_TIERS.map(tier => {
+      const priceETH = tier.priceUSD > 0 && cryptoQuotes.ETH ? parseFloat((tier.priceUSD / cryptoQuotes.ETH).toFixed(4)) : 0;
+      const priceSOL = tier.priceUSD > 0 && cryptoQuotes.SOL ? parseFloat((tier.priceUSD / cryptoQuotes.SOL).toFixed(2)) : 0;
+      return { ...tier, priceETH, priceSOL };
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -81,7 +119,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
   const handleConfirm = async () => {
     if (!selectedTier) return;
     
-    const tier = PRICING_TIERS.find(t => t.id === selectedTier);
+    const tier = pricingTiers.find(t => t.id === selectedTier);
     
     if (tier.priceETH > 0 && !paymentSent) {
       // Payment not yet verified - show payment instructions
@@ -187,8 +225,8 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
           )}
 
           {/* Pricing Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {PRICING_TIERS.map((tier) => {
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {pricingTiers.map((tier) => {
               const isSelected = selectedTier === tier.id;
               const isCurrent = currentTier?.tierId === tier.id && isCurrentTierActive;
               const isDisabled = isCurrent;
@@ -227,12 +265,17 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
                   {/* Price */}
                   <div className="mt-3 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-theme-primary">
-                        {tier.priceETH > 0 ? `${tier.priceETH} ETH` : 'Free'}
-                      </span>
+                       {tier.priceUSD > 0 ? (
+                           <>
+                             <span className="text-2xl font-bold text-theme-primary">${tier.priceUSD}</span>
+                             <span className="text-xs text-theme-secondary font-mono mt-1">({tier.priceETH} ETH)</span>
+                           </>
+                       ) : (
+                           <span className="text-2xl font-bold text-theme-primary">Free</span>
+                       )}
                     </div>
-                    {tier.priceETH > 0 && (
-                      <div className="text-xs text-theme-secondary">
+                    {tier.priceUSD > 0 && (
+                      <div className="text-[10px] text-theme-secondary font-mono">
                         or {tier.priceSOL} SOL · {tier.duration}
                       </div>
                     )}
@@ -323,7 +366,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
                   <div className="flex items-center justify-between text-theme-secondary">
                     <span>Amount:</span>
                     <span className="text-theme-primary font-mono font-semibold text-sm">
-                      {getTierPrice(PRICING_TIERS.find(t => t.id === selectedTier))} {paymentMethod}
+                      {getTierPrice(pricingTiers.find(t => t.id === selectedTier))} {paymentMethod}
                     </span>
                   </div>
                   
@@ -403,7 +446,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
           {selectedTier && (
             <button
               onClick={handleConfirm}
-              disabled={isProcessing || (PRICING_TIERS.find(t => t.id === selectedTier).priceETH > 0 && !paymentSent)}
+              disabled={isProcessing || (pricingTiers.find(t => t.id === selectedTier).priceETH > 0 && !paymentSent)}
               className={selectedTier === 'free' ? 'btn-success' : 'btn-primary'}
             >
               {isProcessing ? (
@@ -414,7 +457,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
               ) : selectedTier === 'free' ? (
                 'Start Free Testing'
               ) : paymentSent ? (
-                `Activate ${PRICING_TIERS.find(t => t.id === selectedTier).name} Plan`
+                `Activate ${pricingTiers.find(t => t.id === selectedTier).name} Plan`
               ) : (
                 `Waiting for Payment...`
               )}

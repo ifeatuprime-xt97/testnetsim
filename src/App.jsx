@@ -13,7 +13,9 @@ import { DEFAULT_NETWORK } from './config/networks.js';
 import { saveSession, getSessions } from './utils/storageUtils.js';
 import { usePricingTier } from './hooks/usePricingTier.js';
 import { ethers } from 'ethers';
-import { connectWallet, ensureNetwork } from './utils/ethereumUtils.js';
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
+import { connectWallet, ensureNetwork, fundSessionBridge, sweepSessionBridge } from './utils/web3Utils.js';
 
 const TABS = [
   { id: 'wallets', label: 'Wallet Generator', icon: '⬡' },
@@ -58,18 +60,27 @@ export default function App() {
   // Web3 Logic
   const handleConnectWallet = async () => {
     try {
-      const { account, provider } = await connectWallet();
+      const { account, provider } = await connectWallet(network);
       setConnectedAccount(account);
       
       // Setup bridge if missing
       if (!sessionWallet) {
-        const newSessionWallet = ethers.Wallet.createRandom();
-        setSessionWallet(newSessionWallet);
-        setMasterKey(newSessionWallet.privateKey); 
+        if (network?.isSolana) {
+           const newSessionWallet = Keypair.generate();
+           setSessionWallet({ 
+             address: newSessionWallet.publicKey.toBase58(), 
+             privateKey: bs58.encode(newSessionWallet.secretKey) 
+           });
+           setMasterKey(bs58.encode(newSessionWallet.secretKey));
+        } else {
+           const newSessionWallet = ethers.Wallet.createRandom();
+           setSessionWallet(newSessionWallet);
+           setMasterKey(newSessionWallet.privateKey); 
+        }
       }
       
-      if (network?.chainId) {
-         try { await ensureNetwork(provider, network.chainId); } catch(e) { console.warn(e); }
+      if (network?.chainId && !network?.isSolana) {
+         try { await ensureNetwork(provider, network); } catch(e) { console.warn(e); }
       }
       addLog(`Connected Web3 Wallet: ${account.slice(0,6)}...${account.slice(-4)}`, 'success');
     } catch (err) {
@@ -81,15 +92,9 @@ export default function App() {
     if (!connectedAccount || !sessionWallet) return;
     setIsFundingSession(true);
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const tx = await signer.sendTransaction({
-        to: sessionWallet.address,
-        value: ethers.parseEther(sessionFundingAmount.toString())
-      });
-      addLog(`Funding session bridge... Tx: ${tx.hash.slice(0,8)}...`, 'info');
-      await tx.wait();
-      addLog(`Session Bridge Wallet successfully funded with ${sessionFundingAmount} ETH!`, 'success');
+      const txHash = await fundSessionBridge(network, sessionWallet.address, sessionFundingAmount, connectedAccount);
+      addLog(`Funding session bridge... Tx: ${txHash.slice(0,8)}...`, 'info');
+      addLog(`Session Bridge Wallet successfully funded with ${sessionFundingAmount} ${network?.isSolana ? 'SOL' : 'ETH'}!`, 'success');
     } catch (err) {
       addLog(`Failed to fund session window: ${err.shortMessage || err.message}`, 'error');
     } finally {
@@ -100,32 +105,9 @@ export default function App() {
   const handleSweepSession = async () => {
       if (!connectedAccount || !sessionWallet) return;
       try {
-          // Send remaining gas from the browser-held session key back to the injected user account
-          const provider = new ethers.JsonRpcProvider(network.rpc);
-          const wallet = new ethers.Wallet(sessionWallet.privateKey, provider);
-          const balance = await provider.getBalance(wallet.address);
-          
-          if (balance > 0n) {
-             const gasPrice = (await provider.getFeeData()).gasPrice || ethers.parseUnits('1', 'gwei');
-             let gasLimit = 21000n;
-             try { gasLimit = await provider.estimateGas({to: connectedAccount, value: 100n}); } catch(e) {}
-             const txCost = gasPrice * gasLimit;
-             
-             if (balance > txCost) {
-                 const tx = await wallet.sendTransaction({
-                     to: connectedAccount,
-                     value: balance - txCost,
-                     gasPrice, gasLimit
-                 });
-                 addLog(`Sweeping session bridge...`, 'info');
-                 await tx.wait();
-                 addLog(`Successfully retrieved session funds.`, 'success');
-             } else {
-                 addLog(`Session bridge balance too low to sweep gas.`, 'warn');
-             }
-          } else {
-             addLog(`Session bridge is already empty.`, 'warn');
-          }
+          addLog(`Sweeping session bridge to connected wallet...`, 'info');
+          const txHash = await sweepSessionBridge(network, sessionWallet.privateKey, connectedAccount);
+          addLog(`Successfully retrieved session funds.`, 'success');
       } catch (err) {
           addLog(`Session sweep failed: ${err.message}`, 'error');
       }
@@ -369,7 +351,7 @@ export default function App() {
                 <div className="flex items-center gap-2">
                     {!connectedAccount ? (
                         <button onClick={handleConnectWallet} className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider bg-theme-primary text-black shadow hover:brightness-110 transition-all">
-                           Connect MetaMask
+                           Connect Web3 Wallet
                         </button>
                     ) : (
                         <div className="flex items-center gap-2">
