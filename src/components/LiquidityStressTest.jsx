@@ -40,7 +40,18 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function LiquidityStressTest({ network, onResultsChange, addLog, tokenAddress, masterKey }) {
+export default function LiquidityStressTest({ 
+  network, 
+  onResultsChange, 
+  addLog, 
+  tokenAddress, 
+  masterKey,
+  currentTier,
+  activeUntil,
+  getWalletLimit,
+  canUseWallets,
+  openPricingModal
+}) {
   const [pool, setPool] = useState(DEFAULT_POOL);
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState(null);
@@ -55,8 +66,18 @@ export default function LiquidityStressTest({ network, onResultsChange, addLog, 
 
   const cfg = v => setPool(prev => ({ ...prev, ...v }));
 
+  const walletLimit = getWalletLimit?.() || 5;
+  const exceedsLimit = pool.totalTrades > walletLimit;
+
   async function runStressTest() {
     if (running) return;
+
+    if (!canUseWallets?.(pool.totalTrades)) {
+      addLog?.(`Trade limit exceeded: ${pool.totalTrades} trades > ${walletLimit === Infinity ? 'Unlimited' : walletLimit} bots. Please upgrade your plan.`, 'error');
+      openPricingModal?.();
+      return;
+    }
+
     setRunning(true);
     abortRef.current = false;
     setResults(null);
@@ -331,6 +352,25 @@ export default function LiquidityStressTest({ network, onResultsChange, addLog, 
             <label className="label">Total Trades</label>
             <input type="number" className="input-field" min={10} max={500} value={pool.totalTrades}
               onChange={e => cfg({ totalTrades: Math.min(500, +e.target.value) })} />
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-theme-secondary transition-colors">
+                {exceedsLimit ? (
+                  <span className="text-amber-400">
+                    ⚠ Max {walletLimit === Infinity ? 'Unlimited' : walletLimit}
+                  </span>
+                ) : (
+                  `Limit: ${walletLimit === Infinity ? 'Unlimited' : walletLimit}`
+                )}
+              </p>
+              {exceedsLimit && (
+                <button 
+                  onClick={openPricingModal}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors font-medium relative -top-1"
+                >
+                  Upgrade →
+                </button>
+              )}
+            </div>
           </div>
           <div>
             <label className="label">Trade Range ({net?.currency ?? 'native'})</label>

@@ -128,6 +128,17 @@ export default function App() {
     isPaidTier,
   } = usePricingTier();
 
+  // Override wallet limits based on demo requirements
+  const actualGetWalletLimit = useCallback(() => {
+    if (!tokenAddress) return Infinity;
+    if (tokenAddress && (connectedAccount || masterKey)) return 100;
+    return getWalletLimit();
+  }, [tokenAddress, connectedAccount, masterKey, getWalletLimit]);
+
+  const actualCanUseWallets = useCallback((count) => {
+    return count <= actualGetWalletLimit();
+  }, [actualGetWalletLimit]);
+
   // History state
   const [sessionHistory, setSessionHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -447,7 +458,7 @@ export default function App() {
             masterKey={masterKey}
             currentTier={currentTier}
             activeUntil={activeUntil}
-            getWalletLimit={getWalletLimit}
+            getWalletLimit={actualGetWalletLimit}
             openPricingModal={openPricingModal}
           />
         )}
@@ -462,8 +473,8 @@ export default function App() {
             onReplayConsumed={() => setReplayConfig(null)}
             currentTier={currentTier}
             activeUntil={activeUntil}
-            getWalletLimit={getWalletLimit}
-            canUseWallets={canUseWallets}
+            getWalletLimit={actualGetWalletLimit}
+            canUseWallets={actualCanUseWallets}
             openPricingModal={openPricingModal}
           />
         )}
@@ -474,6 +485,11 @@ export default function App() {
             addLog={addLog}
             tokenAddress={tokenAddress}
             masterKey={masterKey}
+            currentTier={currentTier}
+            activeUntil={activeUntil}
+            getWalletLimit={actualGetWalletLimit}
+            canUseWallets={actualCanUseWallets}
+            openPricingModal={openPricingModal}
           />
         )}
         {activeTab === 'dashboard' && (

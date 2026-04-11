@@ -233,10 +233,10 @@ export default function TransactionSimulator({
               <p className="text-xs text-theme-secondary transition-colors">
                 {exceedsLimit ? (
                   <span className="text-amber-400">
-                    ⚠ Your plan limit: {walletLimit} wallets
+                    ⚠ Your plan limit: {walletLimit === Infinity ? 'Unlimited' : walletLimit} wallets
                   </span>
                 ) : (
-                  `up to 10,000 (your limit: ${walletLimit})`
+                  `up to 10,000 (your limit: ${walletLimit === Infinity ? 'Unlimited' : walletLimit})`
                 )}
               </p>
               {exceedsLimit && (

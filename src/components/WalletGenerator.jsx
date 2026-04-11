@@ -202,10 +202,10 @@ export default function WalletGenerator({
               <p className="text-xs text-theme-secondary transition-colors">
                 {exceedsLimit ? (
                   <span className="text-amber-400">
-                    ⚠ Your plan limit: {walletLimit} wallets
+                    ⚠ Your plan limit: {walletLimit === Infinity ? 'Unlimited' : walletLimit} wallets
                   </span>
                 ) : (
-                  `1–50,000 (your limit: ${walletLimit})`
+                  `1–50,000 (your limit: ${walletLimit === Infinity ? 'Unlimited' : walletLimit})`
                 )}
               </p>
               {exceedsLimit && (
