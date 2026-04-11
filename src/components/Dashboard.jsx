@@ -9,12 +9,27 @@ import { NETWORKS } from '../config/networks.js';
 
 const COLORS = { success: '#10b981', fail: '#ef4444', buy: '#6366f1', sell: '#f59e0b' };
 
-function StatCard({ label, value, sub, color }) {
+function StatCard({ label, value, sub, color, icon }) {
   return (
-    <div className="stat-card shadow-inner">
-      <div className="stat-label text-[10px] uppercase tracking-widest">{label}</div>
-      <div className="stat-value text-glow" style={{ color: color || 'var(--text-primary)' }}>{value}</div>
-      {sub && <div className="text-[10px] uppercase tracking-widest opacity-60 mt-2 transition-colors">{sub}</div>}
+    <div className="stat-card shadow-inner group">
+      {icon && (
+        <div className="text-2xl mb-1 opacity-60 group-hover:opacity-90 transition-opacity duration-300">{icon}</div>
+      )}
+      <div className="stat-label">{label}</div>
+      <div
+        className="stat-value text-glow"
+        style={{ color: color || 'var(--text-primary)', fontFamily: "'Space Grotesk', sans-serif" }}
+      >
+        {value}
+      </div>
+      {sub && (
+        <div
+          className="text-[10px] uppercase tracking-wider opacity-50 mt-2 transition-colors"
+          style={{ color: color || 'var(--text-muted)' }}
+        >
+          {sub}
+        </div>
+      )}
     </div>
   );
 }
@@ -134,23 +149,27 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
     return (
       <div className="space-y-5">
         {/* Guide even without data */}
-        <div
-          className="rounded-xl border border-theme-subtle bg-theme-base overflow-hidden transition-colors"
+        <div className="rounded-2xl border overflow-hidden transition-colors"
+          style={{ background: 'rgba(14,21,38,0.6)', borderColor: 'rgba(148,163,184,0.08)' }}
         >
           <button
-            className="w-full px-5 py-3.5 flex items-center justify-between text-left"
+            className="w-full px-5 py-4 flex items-center justify-between text-left"
             onClick={() => setShowGuide(v => !v)}
           >
             <div className="flex items-center gap-3">
+              <span
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-indigo-400 text-sm"
+                style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)' }}
+              >?</span>
               <span className="text-xs font-bold text-theme-primary tracking-wide transition-colors">HOW TO USE — Dashboard</span>
               <span className="text-xs text-theme-secondary hidden sm:block transition-colors">analyze simulation results and export data</span>
             </div>
-            <span className="text-slate-600 text-xs font-mono ml-4 flex-shrink-0">
+            <span className="text-theme-muted text-[10px] font-mono ml-4 flex-shrink-0 uppercase tracking-widest">
               {showGuide ? '▲ hide' : '▼ show'}
             </span>
           </button>
           {showGuide && (
-            <div className="px-5 pb-5" style={{ borderTop: '1px solid #1e1e2e' }}>
+            <div className="px-5 pb-5" style={{ borderTop: '1px solid rgba(148,163,184,0.06)' }}>
               <ol className="space-y-3 mt-4">
                 <GuideStep n={1} title="Run a simulation first" desc="Go to TX Simulator or Liquidity Stress Test and run a session. The Dashboard auto-populates when results are available." />
                 <GuideStep n={2} title="Top stats overview" desc="Success Rate, Slippage Range, Gas Used, and TX counts give an instant health summary. Red = critical, yellow = warning, green = healthy." />
@@ -165,10 +184,22 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
           )}
         </div>
 
-        <div className="glass-panel text-center py-20 text-theme-secondary shadow-inner">
-          <div className="text-5xl mb-4 opacity-20 text-theme-primary text-glow">◎</div>
-          <p className="text-sm font-semibold text-theme-primary">No simulation data yet</p>
-          <p className="text-[11px] mt-1.5 uppercase tracking-widest opacity-80 max-w-sm mx-auto">
+        {/* Empty hero */}
+        <div
+          className="glass-panel text-center py-24"
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
+          {/* Atmospheric glow behind icon */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(99,102,241,0.07), transparent)' }}
+          />
+          <div
+            className="text-6xl mb-6 opacity-20 text-glow"
+            style={{ animation: 'float 4s ease-in-out infinite', color: '#818cf8' }}
+          >◎</div>
+          <p className="text-base font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}>No simulation data yet</p>
+          <p className="text-[11px] mt-2 uppercase tracking-widest opacity-60 max-w-sm mx-auto" style={{ color: 'var(--text-secondary)' }}>
             Run a Transaction Simulation or Liquidity Stress Test to populate this dashboard.
           </p>
         </div>
@@ -240,23 +271,27 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
           label="Total Simulated TXs"
           value={stats.totalTxs.toLocaleString()}
           sub={`${stats.buyCount} buys · ${stats.sellCount} sells`}
+          icon="📊"
         />
         <StatCard
           label="Success Rate"
           value={`${stats.successRate}%`}
           sub={`${stats.successCount} ok · ${stats.failCount} failed`}
-          color={stats.successRate > 90 ? '#10b981' : stats.successRate > 70 ? '#f59e0b' : '#ef4444'}
+          color={stats.successRate > 90 ? '#34d399' : stats.successRate > 70 ? '#fbbf24' : '#f87171'}
+          icon="✓"
         />
         <StatCard
           label="Avg Gas Used"
           value={stats.avgGas.toLocaleString()}
           sub={`${stats.minGas.toLocaleString()} – ${stats.maxGas.toLocaleString()} range`}
+          icon="⛽"
         />
         <StatCard
           label="Slippage Range"
           value={`${stats.minSlippage}–${stats.maxSlippage}%`}
           sub={`avg ${stats.avgSlippage}%`}
-          color={stats.maxSlippage > 10 ? '#ef4444' : stats.maxSlippage > 5 ? '#f59e0b' : '#10b981'}
+          color={stats.maxSlippage > 10 ? '#f87171' : stats.maxSlippage > 5 ? '#fbbf24' : '#34d399'}
+          icon="📉"
         />
       </div>
 

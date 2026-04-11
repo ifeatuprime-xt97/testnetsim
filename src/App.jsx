@@ -18,19 +18,19 @@ import bs58 from 'bs58';
 import { connectWallet, ensureNetwork, fundSessionBridge, sweepSessionBridge } from './utils/web3Utils.js';
 
 const TABS = [
-  { id: 'wallets', label: 'Wallet Generator', icon: '⬡' },
-  { id: 'simulator', label: 'TX Simulator', icon: '◈' },
-  { id: 'stress', label: 'Stress Test', icon: '⚡' },
-  { id: 'dashboard', label: 'Dashboard', icon: '◎' },
-  { id: 'gas', label: 'Gas Monitor', icon: '⛽' },
-  { id: 'compare', label: 'Compare', icon: '⚖' },
+  { id: 'wallets',   label: 'Wallet Generator', icon: '⬡', color: 'indigo' },
+  { id: 'simulator', label: 'TX Simulator',     icon: '◈', color: 'violet' },
+  { id: 'stress',    label: 'Stress Test',      icon: '⚡', color: 'amber'  },
+  { id: 'dashboard', label: 'Dashboard',        icon: '◎', color: 'cyan'   },
+  { id: 'gas',       label: 'Gas Monitor',      icon: '⛽', color: 'orange' },
+  { id: 'compare',   label: 'Compare',          icon: '⚖', color: 'purple' },
 ];
 
 const LOG_LEVEL_META = {
-  success: { label: '[ OK ]', textClass: 'text-emerald-400', dimClass: 'text-emerald-300/70' },
-  warn: { label: '[WARN]', textClass: 'text-amber-400', dimClass: 'text-amber-300/70' },
-  error: { label: '[ERR ]', textClass: 'text-red-400', dimClass: 'text-red-300/70' },
-  info: { label: '[INFO]', textClass: 'text-indigo-400', dimClass: 'text-slate-400' },
+  success: { label: '[ OK ]', textClass: 'text-emerald-400', dimClass: 'text-emerald-300/60', barColor: '#34d399' },
+  warn:    { label: '[WARN]', textClass: 'text-amber-400',   dimClass: 'text-amber-300/60',   barColor: '#fbbf24' },
+  error:   { label: '[ERR ]', textClass: 'text-red-400',     dimClass: 'text-red-300/60',     barColor: '#f87171' },
+  info:    { label: '[INFO]', textClass: 'text-indigo-400',  dimClass: 'text-slate-400',      barColor: '#818cf8' },
 };
 
 function isValidAddress(addr) {
@@ -219,8 +219,13 @@ export default function App() {
 
       {/* ── Tab Navigation ──────────────────────────────────────── */}
       <div
-        className="border-b sticky z-40 bg-theme-elevated/80 backdrop-blur-md border-theme-subtle shadow-sm transition-all duration-300"
-        style={{ top: '61px' }}
+        className="sticky z-40 backdrop-blur-xl transition-all duration-300"
+        style={{
+          top: '61px',
+          background: 'rgba(8,13,24,0.85)',
+          borderBottom: '1px solid rgba(148,163,184,0.07)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+        }}
       >
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-1 py-2 overflow-x-auto">
@@ -228,28 +233,31 @@ export default function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`tab-btn whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id ? 'tab-btn-active' : 'tab-btn-inactive'}`}
+                className={`tab-btn ${activeTab === tab.id ? 'tab-btn-active' : 'tab-btn-inactive'}`}
               >
-                <span>{tab.icon}</span>
+                <span className="text-base leading-none">{tab.icon}</span>
                 <span>{tab.label}</span>
                 {tab.id === 'dashboard' && simStats && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-indigo-900 text-indigo-300">
+                  <span className="ml-0.5 px-1.5 py-0.5 text-[10px] rounded-full font-mono"
+                    style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
                     {simStats.totalTxs}
                   </span>
                 )}
               </button>
             ))}
 
-            {/* History Toggle Button */}
-            <div className="ml-auto pl-4 border-l border-theme-subtle flex items-center">
+            {/* History Toggle */}
+            <div className="ml-auto pl-3 flex items-center">
+              <div className="w-px h-5 mr-3" style={{ background: 'rgba(148,163,184,0.12)' }} />
               <button
                 onClick={() => setHistoryOpen(true)}
-                className="tab-btn whitespace-nowrap flex items-center gap-2 tab-btn-inactive! hover:text-indigo-400"
+                className="tab-btn tab-btn-inactive hover:text-indigo-400"
               >
                 <span>🕒</span>
                 <span>History</span>
                 {sessionHistory.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full font-mono bg-theme-base border border-theme-subtle">
+                  <span className="ml-0.5 px-1.5 py-0.5 text-[10px] rounded-full font-mono"
+                    style={{ background: 'rgba(148,163,184,0.08)', color: 'var(--text-muted)', border: '1px solid rgba(148,163,184,0.12)' }}>
                     {sessionHistory.length}
                   </span>
                 )}
@@ -261,7 +269,12 @@ export default function App() {
 
       {/* ── Session Config Bar (token address) ──────────────────── */}
       <div
-        className="border-b glass-nav transition-all duration-300"
+        className="transition-all duration-300"
+        style={{
+          background: 'rgba(8,13,24,0.70)',
+          borderBottom: '1px solid rgba(148,163,184,0.06)',
+          backdropFilter: 'blur(12px)',
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-3">
           <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0 transition-colors">
@@ -316,19 +329,36 @@ export default function App() {
           )}
 
           {/* Funding Method Toggle UI */}
-          <div className="flex items-stretch ml-auto border-l border-theme-subtle pl-4 transition-colors duration-200">
-             <div className="flex bg-theme-base rounded overflow-hidden mr-3 border border-theme-subtle">
-               <button 
-                  onClick={() => setFundingMode('privateKey')} 
-                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-colors ${fundingMode === 'privateKey' ? 'bg-indigo-600 text-white' : 'text-theme-secondary hover:bg-theme-elevated'}`}
+          <div className="flex items-stretch ml-auto pl-4 transition-colors duration-200" style={{ borderLeft: '1px solid rgba(148,163,184,0.08)' }}>
+             <div className="flex rounded-lg overflow-hidden mr-3"
+               style={{ background: 'rgba(8,13,24,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+               <button
+                  onClick={() => setFundingMode('privateKey')}
+                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
+                    fundingMode === 'privateKey'
+                      ? 'text-white'
+                      : 'text-theme-secondary hover:text-theme-primary'
+                  }`}
+                  style={fundingMode === 'privateKey' ? {
+                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                    boxShadow: '0 0 12px rgba(99,102,241,0.4)',
+                  } : {}}
                >
-                  Private Key
+                  🔑 Private Key
                </button>
-               <button 
-                  onClick={() => setFundingMode('connectWallet')} 
-                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-colors ${fundingMode === 'connectWallet' ? 'bg-indigo-600 text-white' : 'text-theme-secondary hover:bg-theme-elevated'}`}
+               <button
+                  onClick={() => setFundingMode('connectWallet')}
+                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
+                    fundingMode === 'connectWallet'
+                      ? 'text-white'
+                      : 'text-theme-secondary hover:text-theme-primary'
+                  }`}
+                  style={fundingMode === 'connectWallet' ? {
+                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                    boxShadow: '0 0 12px rgba(99,102,241,0.4)',
+                  } : {}}
                >
-                  Connect Wallet
+                  🔗 Connect Wallet
                </button>
              </div>
              
@@ -530,7 +560,12 @@ export default function App() {
 
       {/* ── Global Activity Log Panel (fixed bottom) ─────────────── */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 select-none bg-theme-elevated/95 backdrop-blur-xl border-t border-theme-subtle shadow-[0_-10px_40px_rgba(0,0,0,0.1)] transition-all duration-300"
+        className="fixed bottom-0 left-0 right-0 z-50 select-none backdrop-blur-xl transition-all duration-300"
+        style={{
+          background: 'rgba(6,10,20,0.94)',
+          borderTop: '1px solid rgba(99,102,241,0.18)',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.5), 0 -1px 0 rgba(99,102,241,0.2)',
+        }}
       >
         {/* Header bar */}
         <div
@@ -611,13 +646,16 @@ export default function App() {
                     return (
                       <div
                         key={entry.id}
-                        className="flex items-start gap-2 text-xs font-mono py-0.5 px-1 rounded transition-colors"
+                        className="flex items-start gap-2.5 text-xs py-0.5 px-2 rounded transition-colors animate-fade-in"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
                       >
-                        <span className="text-theme-secondary flex-shrink-0 w-16 tabular-nums transition-colors">{entry.time}</span>
+                        {/* Left colour bar */}
+                        <div className="w-0.5 self-stretch rounded-full flex-shrink-0 mt-0.5" style={{ background: meta.barColor, opacity: 0.7 }} />
+                        <span className="text-[var(--text-muted)] flex-shrink-0 w-16 tabular-nums">{entry.time}</span>
                         <span className={`flex-shrink-0 font-bold ${meta.textClass}`} style={{ minWidth: '3.5rem' }}>
                           {meta.label}
                         </span>
-                        <span className={meta.dimClass}>{entry.message}</span>
+                        <span className={`${meta.dimClass} leading-relaxed`}>{entry.message}</span>
                       </div>
                     );
                   })

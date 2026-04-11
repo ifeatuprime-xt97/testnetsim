@@ -390,21 +390,40 @@ export default function WalletGenerator({
           )}
 
           <div
-            className="mt-3 px-3 py-2.5 rounded-lg text-xs bg-red-900/10 border border-red-500/30 text-red-600 dark:bg-red-900/20 dark:border-red-500/40 dark:text-red-400"
+            className="mt-3 px-4 py-3 rounded-xl text-xs"
+            style={{
+              background: 'rgba(248,113,113,0.05)',
+              borderLeft: '3px solid rgba(248,113,113,0.5)',
+              color: '#f87171',
+            }}
           >
             <strong>Security:</strong> Never use these private keys on mainnet. Testnet-only wallets for simulation and stress testing. Keys exist only in browser memory.
           </div>
         </div>
       )}
 
-      {/* ── Empty State ──────────────────────────────────────────── */}
+      {/* ── Empty State ───────────────────────────────────────────── */}
       {wallets.length === 0 && !generating && (
-        <div className="glass-panel text-center py-20 text-theme-secondary shadow-inner">
-          <div className="text-5xl mb-4 opacity-20 text-theme-primary text-glow">⬡</div>
-          <p className="text-sm font-semibold text-theme-primary">No wallets generated yet.</p>
-          <p className="text-[11px] uppercase tracking-widest opacity-80 mt-1.5">Set the count above and click Generate.</p>
-          <p className="text-[11px] mt-6 opacity-60">
-            Expand <strong className="text-theme-primary">HOW TO USE</strong> above for step-by-step instructions.
+        <div
+          className="glass-panel text-center py-24"
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
+          {/* Atmospheric glow */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse 50% 40% at 50% 50%, rgba(99,102,241,0.07), transparent)' }}
+          />
+          <div
+            className="text-6xl mb-6 opacity-20"
+            style={{ animation: 'float 4s ease-in-out infinite', color: '#818cf8' }}
+          >⬡</div>
+          <p
+            className="text-base font-semibold"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text-primary)' }}
+          >No wallets generated yet.</p>
+          <p className="text-[11px] uppercase tracking-widest opacity-60 mt-2" style={{ color: 'var(--text-secondary)' }}>Set the count above and click Generate.</p>
+          <p className="text-[11px] mt-6 opacity-40" style={{ color: 'var(--text-muted)' }}>
+            Expand <strong style={{ color: 'var(--text-primary)', opacity: 0.7 }}>HOW TO USE</strong> above for step-by-step instructions.
           </p>
         </div>
       )}
