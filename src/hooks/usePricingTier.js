@@ -60,7 +60,7 @@ export function usePricingTier() {
   // Get current wallet limit
   const getWalletLimit = useCallback(() => {
     if (!currentTier?.tier) {
-      return Number(import.meta.env.VITE_FREE_TIER_WALLETS || 5);
+      return Number(import.meta.env.VITE_FREE_TIER_WALLETS || 100);
     }
     return currentTier.tier.wallets;
   }, [currentTier]);
