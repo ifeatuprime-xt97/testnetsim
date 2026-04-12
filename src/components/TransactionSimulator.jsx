@@ -137,7 +137,7 @@ export default function TransactionSimulator({
 
       setIsRunning(false);
     }
-  }, [config, net, isRunning, onResultsChange, addLog]);
+  }, [config, net, isRunning, onResultsChange, addLog, tokenAddress, masterKey, canUseWallets, walletLimit, openPricingModal]);
 
   const handleStop = () => {
     abortRef.current = true;

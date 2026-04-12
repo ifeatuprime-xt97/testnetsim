@@ -7,7 +7,7 @@ export const NETWORKS = {
     id: 'sepolia',
     name: 'Ethereum Sepolia Testnet',
     chainId: 11155111,
-    rpc: 'https://rpc.sepolia.org',
+    rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
     explorer: 'https://sepolia.etherscan.io',
     currency: 'ETH',
     faucet: 'https://sepoliafaucet.com',

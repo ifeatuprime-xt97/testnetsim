@@ -105,6 +105,7 @@ export async function* runSimulation(config, wallets) {
     let success = false;
     let failReason = null;
     let useInternalAmm = false;
+    let actualTokenSold = 0;
 
     // Determine simulated fee/congestion 
     const congestionLevels = ['low', 'normal', 'normal', 'normal', 'high', 'spike'];
@@ -155,8 +156,8 @@ export async function* runSimulation(config, wallets) {
     if (useInternalAmm) {
       if (isSell) {
         // Sell some portion of the wallet's token balance
-        const tokenAmount = walletTokenBalances[wallet.address] * (0.2 + Math.random() * 0.5);
-        ammResult = simulateSell(tokenAmount, poolReserveToken, poolReserveEth);
+        actualTokenSold = walletTokenBalances[wallet.address] * (0.2 + Math.random() * 0.5);
+        ammResult = simulateSell(actualTokenSold, poolReserveToken, poolReserveEth);
         txType = 'sell';
       } else {
         ammResult = simulateBuy(amountEth, poolReserveToken, poolReserveEth);
@@ -184,7 +185,7 @@ export async function* runSimulation(config, wallets) {
         if (txType === 'buy') {
           walletTokenBalances[wallet.address] += ammResult.amountOut;
         } else {
-          walletTokenBalances[wallet.address] -= amountEth; // token amount sold
+          walletTokenBalances[wallet.address] -= actualTokenSold; // token amount sold
         }
       }
     }
