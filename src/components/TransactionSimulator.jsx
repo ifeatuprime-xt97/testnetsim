@@ -197,14 +197,11 @@ export default function TransactionSimulator({
         </button>
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
-            <ol className="space-y-3 mt-4">
-              <GuideStep n={1} title="Set pool reserves" desc="Token Reserve and ETH Reserve define the starting state of your simulated AMM pool. Use your token's actual launch liquidity figures for realistic results." />
-              <GuideStep n={2} title="Configure wallets and TXs" desc="Wallets = number of unique addresses trading (up to 10,000). Total Transactions = how many buy/sell events to simulate. More wallets = more address spread across TXs." />
-              <GuideStep n={3} title="Choose a timing pattern" desc="Random = organic spread. Burst = rapid-fire bot-like activity. Slow Drip = gradual accumulation. Spike = stress test with random pauses." />
-              <GuideStep n={4} title="Set sell ratio" desc="Percentage of transactions that are sells. 25% means 3 in 4 TXs are buys. Wallets must have bought first before they can sell." />
-              <GuideStep n={5} title="Set contract limits (optional)" desc="maxTx = max single-TX size in ETH (0 = disabled). maxWallet = max token holdings per wallet (0 = disabled). Used to test anti-whale restrictions." />
-              <GuideStep n={6} title="Fast Mode" desc="Skips animation delays and processes all TXs instantly. Use this for large simulations (500+ TXs) where you want results immediately." />
-              <GuideStep n={7} title="Run and review" desc="Watch the live TX log as transactions process. Green = successful. Red = failed (maxTx/maxWallet violation). When complete, go to the Dashboard tab for charts." />
+              <GuideStep n={1} title="Define Application State" desc="Input your exact tokenomics and initial LP injection (ETH/Token reserves) to seed the accurate mathematical model." />
+              <GuideStep n={2} title="Program Actor Load" desc="Designate the number of active wallet addresses participating in the simulation alongside the raw transaction payload count." />
+              <GuideStep n={3} title="Select Behavioral Matrix" desc="Pick an attack vector. 'Random' tests natural drift. 'Spike' and 'Burst' inject malicious, highly synchronized bot-style load." />
+              <GuideStep n={4} title="Tune Constraints" desc="Bind the simulation by defining strict smart-contract limits such as maxTx (ETH chunk size) and maxWallet (Token accumulation ceiling)." />
+              <GuideStep n={5} title="Execute Strategy" desc="Watch the simulation interpret the behavioral matrix live. Red rejections indicate your contract limits effectively blocked whale dominance!" />
             </ol>
             <div
               className="mt-4 px-3 py-2.5 rounded-lg text-xs bg-emerald-900/10 border-l-2 border-emerald-600 text-emerald-600 dark:bg-emerald-900/20 dark:border-emerald-700/80 dark:text-emerald-500"

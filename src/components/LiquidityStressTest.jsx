@@ -297,14 +297,10 @@ export default function LiquidityStressTest({
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
             <ol className="space-y-3 mt-4">
-              <GuideStep n={1} title="Set pool reserves" desc="Token Reserve and ETH Reserve define your pool's initial liquidity. Smaller pools produce more slippage per trade — use your token's actual launch figures for realistic results." />
-              <GuideStep n={2} title="Set contract limits" desc="maxTx = maximum single-TX value in ETH (0 = off). maxWallet = maximum token balance per wallet (0 = off). Any trade exceeding these is counted as a violation and marked as failed." />
-              <GuideStep n={3} title="Set slippage tolerance" desc="Trades where price impact exceeds this % are flagged in the Slippage Exceeded counter. This does NOT block trades — use it to understand how much movement typical trades cause." />
-              <GuideStep n={4} title="Configure trade volume" desc="Total Trades = how many random buy/sell events to simulate. Trade Range sets the per-trade ETH amount. Sell Ratio controls the buy/sell mix." />
-              <GuideStep n={5} title="Run the stress test" desc="The engine runs all trades synchronously. ~5% of trades randomly receive a gas spike (3x normal gas) to simulate network congestion events." />
-              <GuideStep n={6} title="Review issue cards" desc="Green = none detected. Yellow = warning level. Red = critical. Focus on Slippage Exceeded and Failed TXs for pool health assessment." />
-              <GuideStep n={7} title="Pool Drain Analysis" desc="Check the net buy vs sell pressure. If the ETH reserve dropped significantly, your pool experienced heavy sell-side pressure. Use this to size your initial liquidity." />
-              <GuideStep n={8} title="Trade Log" desc="After the test completes, expand the Trade Log below the charts to see every individual trade with price impact, gas, and pass/fail status." />
+              <GuideStep n={1} title="Bootstrap Pool" desc="Initialize your pool size. Smaller liquidities directly undergo chaotic slippage degradation under heavy volume." />
+              <GuideStep n={2} title="Inject Volatility" desc="Define high-impact random 'Gas Spikes' to simulate network congestion conditions under heavy sustained duress." />
+              <GuideStep n={3} title="Enforce Tolerances" desc="Slippage parameters establish your boundaries. Anything trading beyond this limit flags a massive structural failure in the pool." />
+              <GuideStep n={4} title="Monitor Drain Analytics" desc="Deploy the engine and observe net-ETH extraction from your liquidity pool vs token accumulation by external actors." />
             </ol>
             <div
               className="mt-4 px-3 py-2.5 rounded-lg text-xs bg-amber-900/10 border-l-2 border-amber-600 text-amber-600 dark:bg-amber-900/20 dark:border-amber-700/80 dark:text-amber-500 transition-colors"

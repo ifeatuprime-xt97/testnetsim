@@ -206,16 +206,11 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
           </button>
           {showGuide && (
             <div className="px-5 pb-5" style={{ borderTop: '1px solid rgba(148,163,184,0.06)' }}>
-              <ol className="space-y-3 mt-4">
-                <GuideStep n={1} title="Run a simulation first" desc="Go to TX Simulator or Liquidity Stress Test and run a session. The Dashboard auto-populates when results are available." />
-                <GuideStep n={2} title="Top stats overview" desc="Success Rate, Slippage Range, Gas Used, and TX counts give an instant health summary. Red = critical, yellow = warning, green = healthy." />
-                <GuideStep n={3} title="Activity Timeline" desc="Shows successful vs failed transactions across the session in buckets. A spike in failures at a particular point may indicate pool depletion." />
-                <GuideStep n={4} title="Gas Distribution" desc="Bar chart showing the spread of gas prices across the session. A wide spread indicates network congestion simulation is working correctly." />
-                <GuideStep n={5} title="Pie charts" desc="Success/Failed ratio and Buy/Sell ratio at a glance. High failure rates with maxTx/maxWallet set indicates your limits are being hit frequently." />
-                <GuideStep n={6} title="Failure Breakdown" desc="If failures exist, this shows which constraint triggered them (maxTx, maxWallet, etc.) and what proportion each caused." />
-                <GuideStep n={7} title="Gas Cost Summary" desc="Total estimated gas cost in ETH helps plan real testnet funding requirements before doing live testing." />
-                <GuideStep n={8} title="Export" desc="CSV for raw TX data in spreadsheet tools. JSON for the full dataset including stats and simulation config — useful for comparing runs." />
-              </ol>
+              <GuideStep n={1} title="Global Health Pulse" desc="A summarized diagnostic verdict of your most recent operation displaying raw success rates and capital attrition." />
+              <GuideStep n={2} title="Deep Parse Failures" desc="Diagnoses exactly which limitations (Slippage, maxTx, maxWallet) triggered network rejection." />
+              <GuideStep n={3} title="Unlock High-Octane Reports" desc="Spend your paid simulation credits to unlock full intelligence analysis featuring smart-contract parameter fixes and risk profiles." />
+              <GuideStep n={4} title="Data Exfiltration" desc="Package your raw mathematical findings into clean JSON/CSV reports for external team evaluation." />
+            </ol>
             </div>
           )}
         </div>
@@ -263,13 +258,10 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
         </button>
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
-            <ol className="space-y-3 mt-4">
-              <GuideStep n={1} title="Top stats overview" desc="Success Rate, Slippage Range, Gas Used, and TX counts give an instant health summary. Red = critical, yellow = warning, green = healthy." />
-              <GuideStep n={2} title="Activity Timeline" desc="Shows successful vs failed TXs bucketed across the session. Spikes in failures may indicate pool depletion or limit triggers late in the run." />
-              <GuideStep n={3} title="Gas Distribution" desc="Bar chart of gas price spread. A wide distribution confirms that gas spike simulation is working — look for outliers on the right tail." />
-              <GuideStep n={4} title="Failure Breakdown" desc="If failures exist, the proportion chart shows which constraint caused them. Heavy maxTx/maxWallet failures = adjust your limits." />
-              <GuideStep n={5} title="Gas Cost Summary" desc="Total estimated ETH gas spend — use this to calculate how much testnet ETH you need to fund wallets for live testing." />
-              <GuideStep n={6} title="Export data" desc="CSV gives raw TX rows (id, type, wallet, amount, gas, success). JSON includes the full stats object and simulation config for comparison across runs." />
+              <GuideStep n={1} title="Global Health Pulse" desc="A summarized diagnostic verdict of your most recent operation displaying raw success rates and capital attrition." />
+              <GuideStep n={2} title="Deep Parse Failures" desc="Diagnoses exactly which limitations (Slippage, maxTx, maxWallet) triggered network rejection." />
+              <GuideStep n={3} title="Unlock High-Octane Reports" desc="Spend your paid simulation credits to unlock full intelligence analysis featuring smart-contract parameter fixes and risk profiles." />
+              <GuideStep n={4} title="Data Exfiltration" desc="Package your raw mathematical findings into clean JSON/CSV reports for external team evaluation." />
             </ol>
           </div>
         )}

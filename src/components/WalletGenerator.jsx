@@ -149,13 +149,10 @@ export default function WalletGenerator({
         </button>
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
-            <ol className="space-y-3 mt-4">
-              <GuideStep n={1} title="Select a network" desc="Use the network dropdown in the header. Each network uses different key types — EVM chains use secp256k1 (ethers.js), Solana uses ed25519 (tweetnacl)." />
-              <GuideStep n={2} title="Set wallet count" desc="Enter 1–50,000. More wallets give wider address spread when simulating distributed trading. For counts above 200, the table preview is limited to the first 200 rows — use Export to get all keys." />
-              <GuideStep n={3} title="Click Generate" desc="Keypairs are created instantly in browser memory — no RPC calls, no external requests. Nothing is stored or transmitted." />
-              <GuideStep n={4} title="Export immediately" desc="Click Export CSV or Export JSON before closing or refreshing. Wallet keys exist only in your browser's JS memory — they are permanently lost on page reload." />
-              <GuideStep n={5} title="Fund from faucet" desc="Use the faucet link below to get testnet tokens. Funding is required for live testnet TX simulation, but not needed for simulation-mode analysis." />
-              <GuideStep n={6} title="Reveal private keys" desc="Click the blurred key row to reveal. Use the copy button to copy to clipboard. Never import these keys into mainnet wallets." />
+              <GuideStep n={1} title="Target Cryptography Standard" desc="Choose between EVM (ethers.js / secp256k1) or Solana (ed25519) cryptographic standards for your wallet array." />
+              <GuideStep n={2} title="Spawn Ephemeral Instances" desc="Rapidly allocate up to 50,000 localized wallets within your temporary browser memory. No data is stored externally." />
+              <GuideStep n={3} title="Export Cryptography" desc="If running LIVE simulations later, instantly stash these generated private keys via CSV/JSON before closing the window." />
+              <GuideStep n={4} title="Fund the Bot Array" desc="Attach a private master key to indiscriminately airdrop testnet gas tokens to your entire botnet for live testnet capability." />
             </ol>
             <div
               className="mt-4 px-3 py-2.5 rounded-lg text-xs bg-amber-900/10 border-l-2 border-amber-600 text-amber-600 dark:bg-amber-900/20 dark:border-amber-700/80 dark:text-amber-500"
