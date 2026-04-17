@@ -149,6 +149,7 @@ export default function WalletGenerator({
         </button>
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
+            <ol className="space-y-3 mt-4">
               <GuideStep n={1} title="Target Cryptography Standard" desc="Choose between EVM (ethers.js / secp256k1) or Solana (ed25519) cryptographic standards for your wallet array." />
               <GuideStep n={2} title="Spawn Ephemeral Instances" desc="Rapidly allocate up to 50,000 localized wallets within your temporary browser memory. No data is stored externally." />
               <GuideStep n={3} title="Export Cryptography" desc="If running LIVE simulations later, instantly stash these generated private keys via CSV/JSON before closing the window." />

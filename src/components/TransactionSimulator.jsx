@@ -197,6 +197,7 @@ export default function TransactionSimulator({
         </button>
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
+            <ol className="space-y-3 mt-4">
               <GuideStep n={1} title="Define Application State" desc="Input your exact tokenomics and initial LP injection (ETH/Token reserves) to seed the accurate mathematical model." />
               <GuideStep n={2} title="Program Actor Load" desc="Designate the number of active wallet addresses participating in the simulation alongside the raw transaction payload count." />
               <GuideStep n={3} title="Select Behavioral Matrix" desc="Pick an attack vector. 'Random' tests natural drift. 'Spike' and 'Burst' inject malicious, highly synchronized bot-style load." />

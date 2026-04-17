@@ -206,11 +206,12 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
           </button>
           {showGuide && (
             <div className="px-5 pb-5" style={{ borderTop: '1px solid rgba(148,163,184,0.06)' }}>
-              <GuideStep n={1} title="Global Health Pulse" desc="A summarized diagnostic verdict of your most recent operation displaying raw success rates and capital attrition." />
-              <GuideStep n={2} title="Deep Parse Failures" desc="Diagnoses exactly which limitations (Slippage, maxTx, maxWallet) triggered network rejection." />
-              <GuideStep n={3} title="Unlock High-Octane Reports" desc="Spend your paid simulation credits to unlock full intelligence analysis featuring smart-contract parameter fixes and risk profiles." />
-              <GuideStep n={4} title="Data Exfiltration" desc="Package your raw mathematical findings into clean JSON/CSV reports for external team evaluation." />
-            </ol>
+              <ol className="space-y-3 mt-4">
+                <GuideStep n={1} title="Global Health Pulse" desc="A summarized diagnostic verdict of your most recent operation displaying raw success rates and capital attrition." />
+                <GuideStep n={2} title="Deep Parse Failures" desc="Diagnoses exactly which limitations (Slippage, maxTx, maxWallet) triggered network rejection." />
+                <GuideStep n={3} title="Unlock High-Octane Reports" desc="Spend your paid simulation credits to unlock full intelligence analysis featuring smart-contract parameter fixes and risk profiles." />
+                <GuideStep n={4} title="Data Exfiltration" desc="Package your raw mathematical findings into clean JSON/CSV reports for external team evaluation." />
+              </ol>
             </div>
           )}
         </div>
@@ -258,6 +259,7 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
         </button>
         {showGuide && (
           <div className="px-5 pb-5 border-t border-theme-subtle transition-all duration-300">
+            <ol className="space-y-3 mt-4">
               <GuideStep n={1} title="Global Health Pulse" desc="A summarized diagnostic verdict of your most recent operation displaying raw success rates and capital attrition." />
               <GuideStep n={2} title="Deep Parse Failures" desc="Diagnoses exactly which limitations (Slippage, maxTx, maxWallet) triggered network rejection." />
               <GuideStep n={3} title="Unlock High-Octane Reports" desc="Spend your paid simulation credits to unlock full intelligence analysis featuring smart-contract parameter fixes and risk profiles." />
