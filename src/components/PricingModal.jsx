@@ -68,6 +68,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
   const [paymentSent, setPaymentSent] = useState(false);
   const [txHash, setTxHash] = useState('');
   const [cryptoQuotes, setCryptoQuotes] = useState({ ETH: null, SOL: null });
+  const [advancedWallets, setAdvancedWallets] = useState(50000);
 
   useEffect(() => {
     if (isOpen && !cryptoQuotes.ETH) {
@@ -87,9 +88,18 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
   }, [isOpen]);
 
   const pricingTiers = BASE_TIERS.map(tier => {
-      const priceETH = tier.priceUSD > 0 && cryptoQuotes.ETH ? parseFloat((tier.priceUSD / cryptoQuotes.ETH).toFixed(4)) : 0;
-      const priceSOL = tier.priceUSD > 0 && cryptoQuotes.SOL ? parseFloat((tier.priceUSD / cryptoQuotes.SOL).toFixed(2)) : 0;
-      return { ...tier, priceETH, priceSOL };
+      let currentPriceUSD = tier.priceUSD;
+      let currentWallets = tier.wallets;
+      
+      if (tier.id === 'advanced') {
+          currentWallets = advancedWallets;
+          // minimum $50, scale at $0.001 per wallet
+          currentPriceUSD = Math.max(50, advancedWallets * 0.001);
+      }
+
+      const priceETH = currentPriceUSD > 0 && cryptoQuotes.ETH ? parseFloat((currentPriceUSD / cryptoQuotes.ETH).toFixed(4)) : 0;
+      const priceSOL = currentPriceUSD > 0 && cryptoQuotes.SOL ? parseFloat((currentPriceUSD / cryptoQuotes.SOL).toFixed(2)) : 0;
+      return { ...tier, priceUSD: currentPriceUSD, wallets: currentWallets, priceETH, priceSOL };
   });
 
   useEffect(() => {
@@ -308,9 +318,25 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
                   {/* Wallet Limit */}
                   <div className="mt-3 px-3 py-2 rounded-lg bg-theme-elevated border border-theme-subtle">
                     <div className="text-xs text-theme-secondary">Wallet Limit</div>
-                    <div className="text-sm font-semibold text-theme-primary">
-                      {tier.wallets >= 10000 ? 'Unlimited' : `Up to ${tier.wallets}`}
-                    </div>
+                    
+                    {tier.id === 'advanced' ? (
+                      <div className="flex items-center mt-1">
+                        <input
+                           type="number"
+                           className="input-field py-1 text-sm font-semibold w-full text-theme-primary bg-theme-base"
+                           min={10000}
+                           max={1000000}
+                           step={1000}
+                           value={advancedWallets}
+                           onChange={(e) => setAdvancedWallets(parseInt(e.target.value) || 0)}
+                           onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-sm font-semibold text-theme-primary">
+                        {tier.wallets >= 50000 ? 'Unlimited' : `Up to ${tier.wallets}`}
+                      </div>
+                    )}
                   </div>
 
                   {/* Features */}
