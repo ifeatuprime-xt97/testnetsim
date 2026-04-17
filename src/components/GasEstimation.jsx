@@ -99,7 +99,7 @@ export default function GasEstimation({ network, addLog }) {
         )}
 
         {gasData ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="stat-card shadow-inner">
               <div className="stat-label text-[10px]">Base Fee</div>
               <div className="stat-value text-lg text-glow" style={{ color: '#6366f1' }}>
@@ -222,3 +222,4 @@ export default function GasEstimation({ network, addLog }) {
     </div>
   );
 }
+

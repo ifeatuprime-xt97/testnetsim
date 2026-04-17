@@ -116,7 +116,7 @@ export default function App() {
   // Pricing tier state
   const {
     currentTier,
-    activeUntil,
+    reportsRemaining,
     showPricingModal,
     selectTier,
     resetTier,
@@ -124,8 +124,9 @@ export default function App() {
     closePricingModal,
     getWalletLimit,
     canUseWallets,
-    getRemainingTime,
-    isPaidTier,
+    allowedPatterns,
+    isPaid,
+    deductReport
   } = usePricingTier();
 
   // Override wallet limits based on demo requirements
@@ -288,10 +289,10 @@ export default function App() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-3">
-          <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0 transition-colors">
+          <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0 transition-colors w-full sm:w-auto">
             Token
           </span>
-          <div className="relative flex-1 min-w-[18rem] max-w-lg">
+          <div className="relative w-full sm:flex-1 min-w-0 sm:min-w-[18rem] max-w-lg">
             <input
               type="text"
               className="input-field py-1.5 text-xs font-mono pr-20"
@@ -340,12 +341,12 @@ export default function App() {
           )}
 
           {/* Funding Method Toggle UI */}
-          <div className="flex items-stretch ml-auto pl-4 transition-colors duration-200" style={{ borderLeft: '1px solid rgba(148,163,184,0.08)' }}>
-             <div className="flex rounded-lg overflow-hidden mr-3"
+          <div className="flex flex-col sm:flex-row items-start sm:items-stretch w-full sm:w-auto mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l border-[rgba(148,163,184,0.08)] ml-0 sm:ml-auto pl-0 sm:pl-4 transition-colors duration-200">
+             <div className="flex rounded-lg overflow-hidden mr-3 mb-2 sm:mb-0 w-full sm:w-auto"
                style={{ background: 'rgba(8,13,24,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
                <button
                   onClick={() => setFundingMode('privateKey')}
-                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
+                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
                     fundingMode === 'privateKey'
                       ? 'text-white'
                       : 'text-theme-secondary hover:text-theme-primary'
@@ -359,7 +360,7 @@ export default function App() {
                </button>
                <button
                   onClick={() => setFundingMode('connectWallet')}
-                  className={`text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
+                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
                     fundingMode === 'connectWallet'
                       ? 'text-white'
                       : 'text-theme-secondary hover:text-theme-primary'
@@ -381,7 +382,7 @@ export default function App() {
                   </span>
                   <input
                     type="password"
-                    className="input-field py-1.5 text-xs font-mono w-48"
+                    className="input-field py-1.5 text-xs font-mono w-full sm:w-48 flex-1"
                     placeholder="Private key (for gas)"
                     value={masterKey}
                     onChange={e => setMasterKey(e.target.value.trim())}
@@ -394,14 +395,14 @@ export default function App() {
                         <button onClick={handleConnectWallet} className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider bg-theme-primary text-black shadow hover:brightness-110 transition-all">
                            Connect Web3 Wallet
                         </button>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                           <span className="text-[10px] text-emerald-400 font-mono bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20 shadow-inner">
-                              {connectedAccount.slice(0,6)}...{connectedAccount.slice(-4)}
-                           </span>
+                     ) : (
+                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                            <span className="text-[10px] text-emerald-400 font-mono bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20 shadow-inner">
+                               {connectedAccount.slice(0,6)}...{connectedAccount.slice(-4)}
+                            </span>
                            
                            {sessionWallet && (
-                              <div className="flex items-center gap-2 ml-2 pl-2 border-l border-theme-subtle">
+                              <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0 sm:ml-2 sm:pl-2 sm:border-l border-theme-subtle w-full sm:w-auto">
                                  <input 
                                     type="number" 
                                     step="0.01" 
@@ -457,7 +458,6 @@ export default function App() {
             addLog={addLog} 
             masterKey={masterKey}
             currentTier={currentTier}
-            activeUntil={activeUntil}
             getWalletLimit={actualGetWalletLimit}
             openPricingModal={openPricingModal}
           />
@@ -472,10 +472,10 @@ export default function App() {
             replayConfig={replayConfig}
             onReplayConsumed={() => setReplayConfig(null)}
             currentTier={currentTier}
-            activeUntil={activeUntil}
             getWalletLimit={actualGetWalletLimit}
             canUseWallets={actualCanUseWallets}
             openPricingModal={openPricingModal}
+            allowedPatterns={allowedPatterns}
           />
         )}
         {activeTab === 'stress' && (
@@ -486,10 +486,10 @@ export default function App() {
             tokenAddress={tokenAddress}
             masterKey={masterKey}
             currentTier={currentTier}
-            activeUntil={activeUntil}
             getWalletLimit={actualGetWalletLimit}
             canUseWallets={actualCanUseWallets}
             openPricingModal={openPricingModal}
+            allowedPatterns={allowedPatterns}
           />
         )}
         {activeTab === 'dashboard' && (
@@ -499,6 +499,9 @@ export default function App() {
             config={simConfig}
             tokenAddress={tokenAddress}
             network={network}
+            isPaid={isPaid()}
+            deductReport={deductReport}
+            openPricingModal={openPricingModal}
           />
         )}
         {activeTab === 'gas' && (
@@ -692,8 +695,9 @@ export default function App() {
         onClose={closePricingModal}
         onSelectTier={selectTier}
         currentTier={currentTier}
-        activeUntil={activeUntil}
+        reportsRemaining={reportsRemaining}
       />
     </div>
   );
 }
+

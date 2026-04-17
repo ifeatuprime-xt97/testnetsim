@@ -4,7 +4,7 @@ const STORAGE_KEY = 'testnetsim_pricing_tier';
 
 export function usePricingTier() {
   const [currentTier, setCurrentTier] = useState(null);
-  const [activeUntil, setActiveUntil] = useState(null);
+  const [reportsRemaining, setReportsRemaining] = useState(0);
   const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Load tier from localStorage on mount
@@ -14,38 +14,38 @@ export function usePricingTier() {
       try {
         const data = JSON.parse(stored);
         setCurrentTier(data);
-        setActiveUntil(data.expiresAt);
+        setReportsRemaining(data.reportsRemaining || 0);
       } catch (e) {
         console.error('Failed to load pricing tier:', e);
       }
     }
   }, []);
 
-  // Check if tier has expired
-  useEffect(() => {
-    if (activeUntil && activeUntil < Date.now()) {
-      // Tier expired, reset to free
-      setCurrentTier(null);
-      setActiveUntil(null);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [activeUntil]);
-
   // Save tier to localStorage when it changes
   useEffect(() => {
     if (currentTier) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTier));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...currentTier, reportsRemaining }));
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
     }
-  }, [currentTier]);
+  }, [currentTier, reportsRemaining]);
 
   const selectTier = useCallback((tierData) => {
     setCurrentTier(tierData);
-    setActiveUntil(tierData.expiresAt);
+    setReportsRemaining(tierData.reportsRemaining || 0);
   }, []);
+
+  const deductReport = useCallback(() => {
+    if (reportsRemaining > 0) {
+      setReportsRemaining(prev => prev - 1);
+      return true;
+    }
+    return false;
+  }, [reportsRemaining]);
 
   const resetTier = useCallback(() => {
     setCurrentTier(null);
-    setActiveUntil(null);
+    setReportsRemaining(0);
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
@@ -57,13 +57,21 @@ export function usePricingTier() {
     setShowPricingModal(false);
   }, []);
 
+  // Check if current tier is paid and provides active abilities
+  const isPaid = useCallback(() => {
+    if (!currentTier?.tier) return false;
+    // Enterprise/Advanced might have infinite reports (like say -1 or just check tier level)
+    if (currentTier.tier.reports === 'Unlimited') return true;
+    return reportsRemaining > 0;
+  }, [currentTier, reportsRemaining]);
+
   // Get current wallet limit
   const getWalletLimit = useCallback(() => {
-    if (!currentTier?.tier) {
-      return Number(import.meta.env.VITE_FREE_TIER_WALLETS || 100);
+    if (!isPaid()) {
+      return 10; // FREE tier is strictly 10
     }
     return currentTier.tier.wallets;
-  }, [currentTier]);
+  }, [currentTier, isPaid]);
 
   // Check if wallet count exceeds limit
   const canUseWallets = useCallback((count) => {
@@ -71,22 +79,16 @@ export function usePricingTier() {
     return count <= limit;
   }, [getWalletLimit]);
 
-  // Get remaining time in hours
-  const getRemainingTime = useCallback(() => {
-    if (!activeUntil) return null;
-    const remaining = activeUntil - Date.now();
-    if (remaining <= 0) return 0;
-    return Math.ceil(remaining / (60 * 60 * 1000));
-  }, [activeUntil]);
-
-  // Check if current tier is paid
-  const isPaidTier = useCallback(() => {
-    return currentTier?.tier?.price > 0 && activeUntil && activeUntil > Date.now();
-  }, [currentTier, activeUntil]);
+  const allowedPatterns = useCallback(() => {
+    if (!isPaid()) {
+      return ['random'];
+    }
+    return ['random', 'slowDrip', 'burst', 'spike'];
+  }, [isPaid]);
 
   return {
     currentTier,
-    activeUntil,
+    reportsRemaining,
     showPricingModal,
     selectTier,
     resetTier,
@@ -94,7 +96,8 @@ export function usePricingTier() {
     closePricingModal,
     getWalletLimit,
     canUseWallets,
-    getRemainingTime,
-    isPaidTier,
+    allowedPatterns,
+    isPaid,
+    deductReport
   };
 }

@@ -140,3 +140,4 @@ export default function HistoryPanel({ isOpen, onClose, sessions, onRefreshHisto
         </div>
     );
 }
+

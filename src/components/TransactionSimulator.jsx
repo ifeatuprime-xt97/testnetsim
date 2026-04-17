@@ -49,6 +49,7 @@ export default function TransactionSimulator({
   getWalletLimit,
   canUseWallets,
   openPricingModal,
+  allowedPatterns,
 }) {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [wallets, setWallets] = useState([]);
@@ -218,7 +219,7 @@ export default function TransactionSimulator({
       <div className="card">
         <h2 className="text-sm font-semibold text-theme-primary mb-4 transition-colors">Simulation Configuration</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="label">Wallets</label>
             <input 
@@ -267,13 +268,18 @@ export default function TransactionSimulator({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="label">Timing Pattern</label>
             <select className="input-field" value={config.pattern} onChange={e => cfg({ pattern: e.target.value })}>
-              {Object.entries(TIMING_PATTERNS).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
-              ))}
+              {Object.entries(TIMING_PATTERNS).map(([k, v]) => {
+                const isAllowed = !allowedPatterns || allowedPatterns().includes(k);
+                return (
+                  <option key={k} value={k} disabled={!isAllowed}>
+                    {v.label} {!isAllowed ? '(Pro/Paid)' : ''}
+                  </option>
+                );
+              })}
             </select>
             <p className="text-xs text-theme-secondary mt-1 transition-colors">{TIMING_PATTERNS[config.pattern]?.description}</p>
           </div>
@@ -311,7 +317,7 @@ export default function TransactionSimulator({
           <h3 className="text-xs text-theme-secondary uppercase tracking-wider mb-3 transition-colors">
             Liquidity Pool — Simulation State
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="label">Token Reserve</label>
               <input type="number" className="input-field" min={1000} value={config.reserveToken}
@@ -341,7 +347,7 @@ export default function TransactionSimulator({
               <span className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full pulse-dot" /> Running...
               </span>
-            ) : tokenAddress && masterKey ? 'Run LIVE On-Chain Simulation' : 'Run Simulation'}
+            ) : tokenAddress && masterKey ? 'Run LIVE Pre-Launch Test' : 'Run Pre-Launch Test'}
           </button>
           {isRunning && (
             <button onClick={handleStop} className="btn-danger">Stop</button>
@@ -369,7 +375,7 @@ export default function TransactionSimulator({
 
       {/* ── Stats Summary ────────────────────────────────────────── */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div className="stat-card">
             <div className="stat-label">Total TXs</div>
             <div className="stat-value">{stats.totalTxs}</div>
@@ -485,3 +491,4 @@ export default function TransactionSimulator({
     </div>
   );
 }
+

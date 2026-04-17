@@ -105,3 +105,4 @@ export default function TxMonitor({ network, addLog }) {
     </div>
   );
 }
+

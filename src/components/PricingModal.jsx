@@ -4,70 +4,64 @@ import { verifyETHPayment, verifySOLPayment } from '../utils/paymentVerification
 const BASE_TIERS = [
   {
     id: 'free',
-    name: 'Free',
+    name: 'Preview',
     priceUSD: 0,
-    wallets: Number(import.meta.env.VITE_FREE_TIER_WALLETS || 100),
-    duration: 'Unlimited',
-    description: 'Perfect for testing the waters',
+    wallets: 10,
+    reports: 0,
+    description: 'Preview the readiness UI',
     features: [
-      'Up to 100 wallets',
-      'Basic simulation',
-      'Testnet only',
-      'No time limit',
+      'Up to 10 wallets',
+      'Preview failure limits',
+      'No stress patterns',
     ],
     highlighted: false,
   },
   {
-    id: 'basic',
-    name: 'Basic',
-    priceUSD: Number(import.meta.env.VITE_BASIC_TIER_PRICE_USD || 25),
-    wallets: Number(import.meta.env.VITE_BASIC_TIER_WALLETS || 1000),
-    duration: `${Number(import.meta.env.VITE_BASIC_TIER_DURATION || 24)} hours`,
-    description: 'For serious token creators',
+    id: 'single',
+    name: 'Single Report',
+    priceUSD: 10,
+    wallets: 100,
+    reports: 1,
+    description: 'Full analysis unlocked',
+    features: [
+      'Up to 100 wallets',
+      '1 Full Report',
+      'All insights',
+    ],
+    highlighted: false,
+  },
+  {
+    id: 'pro',
+    name: 'Pro Pack',
+    priceUSD: 25,
+    wallets: 1000,
+    reports: 5,
+    description: 'Bundle of reports',
     features: [
       'Up to 1,000 wallets',
-      '1 simulation session',
-      'Live testnet execution',
-      '24-hour access',
+      '5 Full Reports',
+      'All stress patterns',
     ],
     highlighted: true,
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    priceUSD: Number(import.meta.env.VITE_PRO_TIER_PRICE_USD || 50),
-    wallets: Number(import.meta.env.VITE_PRO_TIER_WALLETS || 10000),
-    duration: `${Number(import.meta.env.VITE_PRO_TIER_DURATION || 24)} hours`,
-    description: 'Unlimited power testing',
-    features: [
-      'Up to 10,000 wallets',
-      '5 simulations',
-      'Live testnet execution',
-      '24-hour access',
-      'Advanced analytics',
-    ],
-    highlighted: false,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    priceUSD: Number(import.meta.env.VITE_ENTERPRISE_TIER_PRICE_USD || 100),
-    wallets: Number(import.meta.env.VITE_ENTERPRISE_TIER_WALLETS || 50000),
-    duration: `${Number(import.meta.env.VITE_ENTERPRISE_TIER_DURATION || 24)} hours`,
-    description: 'Maximum scale deployment',
+    id: 'advanced',
+    name: 'Advanced',
+    priceUSD: 50,
+    wallets: 50000,
+    reports: 'Unlimited',
+    description: 'Maximum testing depth',
     features: [
       'Up to 50,000 wallets',
-      '10 simulations',
-      'Live testnet execution',
-      '24-hour access',
-      'Advanced analytics',
-      'Premium hardware support',
+      'Unlimited Reports',
+      'Stress Testing Load',
+      'Priority Support',
     ],
     highlighted: false,
   },
 ];
 
-export default function PricingModal({ isOpen, onClose, onSelectTier, currentTier, activeUntil }) {
+export default function PricingModal({ isOpen, onClose, onSelectTier, currentTier, reportsRemaining }) {
   const [selectedTier, setSelectedTier] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('ETH'); // 'ETH' or 'SOL'
@@ -114,20 +108,49 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
     setSelectedTier(tier.id);
   };
 
-  const handleConfirm = async () => {
+  // Auto-polling verification logic
+  useEffect(() => {
+    let interval;
+    if (paymentSent && txHash && !isProcessing && selectedTier) {
+      interval = setInterval(async () => {
+        const tier = pricingTiers.find(t => t.id === selectedTier);
+        if (!tier || tier.priceUSD === 0) return;
+        
+        const expectedAmount = getTierPrice(tier);
+        const paymentAddress = getPaymentAddress();
+        
+        let verificationResult;
+        try {
+          if (paymentMethod === 'ETH') {
+            verificationResult = await verifyETHPayment(txHash, paymentAddress, expectedAmount);
+          } else {
+            verificationResult = await verifySOLPayment(txHash, paymentAddress, expectedAmount);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        if (verificationResult?.verified) {
+          clearInterval(interval);
+          handleConfirm(true); // unlock automatically
+        }
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [paymentSent, txHash, isProcessing, selectedTier, paymentMethod, pricingTiers]);
+
+  const handleConfirm = async (skipVerification = false) => {
     if (!selectedTier) return;
     
     const tier = pricingTiers.find(t => t.id === selectedTier);
     
-    if (tier.priceETH > 0 && !paymentSent) {
-      // Payment not yet verified - show payment instructions
+    if (tier.priceETH > 0 && !paymentSent && !skipVerification) {
       return;
     }
 
     setIsProcessing(true);
 
-    // Verify payment on blockchain
-    if (tier.priceETH > 0 && txHash) {
+    if (tier.priceETH > 0 && txHash && !skipVerification) {
       const paymentAddress = getPaymentAddress();
       const expectedAmount = getTierPrice(tier);
       
@@ -145,14 +168,12 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
       }
     }
 
-    const expiresAt = tier.priceETH > 0
-      ? Date.now() + (tier.duration !== 'Unlimited' ? parseInt(tier.duration) * 60 * 60 * 1000 : null)
-      : null;
+    const newReports = tier.reports === 'Unlimited' ? 'Unlimited' : (reportsRemaining + tier.reports);
 
     onSelectTier({
       tierId: selectedTier,
       tier,
-      expiresAt,
+      reportsRemaining: newReports,
       activatedAt: Date.now(),
       paymentMethod: tier.priceETH > 0 ? paymentMethod : null,
       txHash: tier.priceETH > 0 ? txHash : null,
@@ -163,7 +184,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
     onClose();
   };
 
-  const isCurrentTierActive = currentTier && currentTier.tierId !== 'free' && activeUntil && activeUntil > Date.now();
+  const isCurrentTierActive = currentTier && currentTier.tierId !== 'free' && (reportsRemaining > 0 || reportsRemaining === 'Unlimited');
 
   const getPaymentAddress = () => {
     if (paymentMethod === 'ETH') {
@@ -195,7 +216,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
             </h2>
             <p className="text-xs text-theme-secondary mt-0.5">
               {isCurrentTierActive 
-                ? `Current plan: ${currentTier.tier.name} (expires in ${Math.ceil((activeUntil - Date.now()) / (60 * 60 * 1000))}h)`
+                ? `Current plan: ${currentTier.tier.name} (${reportsRemaining} reports remaining)`
                 : 'Select a tier to unlock live testing features'}
             </p>
           </div>
@@ -274,7 +295,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
                     </div>
                     {tier.priceUSD > 0 && (
                       <div className="text-[10px] text-theme-secondary font-mono">
-                        or {tier.priceSOL} SOL · {tier.duration}
+                        or {tier.priceSOL} SOL · {tier.reports} Report{tier.reports > 1 || tier.reports === 'Unlimited' ? 's' : ''}
                       </div>
                     )}
                   </div>
@@ -471,3 +492,4 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
     </div>
   );
 }
+

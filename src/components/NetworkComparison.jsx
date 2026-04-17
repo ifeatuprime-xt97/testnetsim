@@ -132,7 +132,7 @@ export default function NetworkComparison({ addLog }) {
       {/* ── Network Selector ─────────────────────────────────── */}
       <div className="card">
         <h2 className="text-sm font-semibold text-theme-primary mb-4 transition-colors">Select Networks to Compare</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
           {Object.values(NETWORKS).map(n => {
             const selected = selectedNetworks.includes(n.id);
             return (
@@ -162,7 +162,7 @@ export default function NetworkComparison({ addLog }) {
       {/* ── Configuration ────────────────────────────────────── */}
       <div className="card">
         <h2 className="text-sm font-semibold text-theme-primary mb-4 transition-colors">Shared Configuration</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="label">Total Trades</label>
             <input type="number" className="input-field" min={10} max={500} value={config.totalTrades}
@@ -292,3 +292,4 @@ export default function NetworkComparison({ addLog }) {
     </div>
   );
 }
+

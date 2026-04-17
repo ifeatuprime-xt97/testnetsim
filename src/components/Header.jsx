@@ -38,7 +38,7 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
             >
               TestnetSim
             </h1>
-            <p className="text-[9px] font-semibold tracking-[0.18em] uppercase mt-1 leading-none" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[9px] font-semibold tracking-[0.18em] uppercase mt-1 leading-none hidden sm:block" style={{ color: 'var(--text-muted)' }}>
               Liquidity &amp; Load Simulator
             </p>
           </div>
@@ -106,7 +106,7 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
               value={network}
               onChange={e => onNetworkChange(e.target.value)}
               className="bg-transparent border-none outline-none text-xs font-semibold pr-1 cursor-pointer"
-              style={{ color: 'var(--text-primary)', minWidth: '9rem' }}
+              style={{ color: 'var(--text-primary)', minWidth: '7rem', maxWidth: '40vw' }}
             >
               <optgroup label="⚠ Testnets Only">
                 {Object.values(NETWORKS).map(n => (
@@ -139,3 +139,4 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
     </header>
   );
 }
+

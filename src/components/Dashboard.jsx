@@ -6,6 +6,8 @@ import {
 } from 'recharts';
 import { exportJSON, exportCSV, exportPDFReport } from '../utils/exportUtils.js';
 import { NETWORKS } from '../config/networks.js';
+import { analyzeSimulation } from '../utils/simulationAnalysis.js';
+import SimulationReport from './SimulationReport.jsx';
 
 const COLORS = { success: '#10b981', fail: '#ef4444', buy: '#6366f1', sell: '#f59e0b' };
 
@@ -50,9 +52,26 @@ function GuideStep({ n, title, desc }) {
   );
 }
 
-export default function Dashboard({ results, stats, config, tokenAddress, network }) {
+export default function Dashboard({ results, stats, config, tokenAddress, network, isPaid, deductReport, openPricingModal }) {
   const net = NETWORKS[network];
   const [showGuide, setShowGuide] = useState(false);
+  const [reportUnlocked, setReportUnlocked] = useState(false);
+
+  React.useEffect(() => {
+    setReportUnlocked(false);
+  }, [results]);
+
+  const handleUnlock = () => {
+    if (isPaid) {
+      if (deductReport()) {
+        setReportUnlocked(true);
+      } else {
+        openPricingModal();
+      }
+    } else {
+      openPricingModal();
+    }
+  };
 
   const timelineData = useMemo(() => {
     if (!results?.length) return [];
@@ -144,6 +163,23 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
   }, [results]);
 
   const hasData = results?.length > 0 && stats;
+
+  const analysisData = useMemo(() => {
+    if (!hasData) return null;
+    return analyzeSimulation(results, stats);
+  }, [results, stats, hasData]);
+
+  const handleDownloadReport = () => {
+    if (!analysisData) return;
+    const text = `PRE-LAUNCH REPORT\n=================\nVerdict: ${analysisData.verdict}\nScore: ${analysisData.score}/100\n\nSUMMARY\n${analysisData.summary}\n\nWARNINGS\n${analysisData.warnings.map(w => '⚠️ ' + w).join('\n')}\n\nINSIGHTS\n${analysisData.insights.map(i => '💡 ' + i).join('\n')}\n\nMETRICS\nSuccess Rate: ${analysisData.breakdown.successRate}%\nAvg Slippage: ${analysisData.breakdown.avgSlippage}%\nTotal Gas Cost: ${analysisData.breakdown.totalGasCost} ETH\n`;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pre_launch_report.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (!hasData) {
     return (
@@ -265,8 +301,16 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
         </div>
       </div>
 
+      {/* ── Pre-Launch Report ────────────────────────────────────── */}
+      <SimulationReport 
+        data={analysisData} 
+        isPaid={reportUnlocked} 
+        onUnlock={handleUnlock} 
+        onDownload={reportUnlocked ? handleDownloadReport : null} 
+      />
+
       {/* ── Top Stats ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           label="Total Simulated TXs"
           value={stats.totalTxs.toLocaleString()}
@@ -460,7 +504,7 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
       {/* ── Gas Cost Summary ─────────────────────────────────────── */}
       <div className="card">
         <h3 className="text-sm font-semibold text-theme-primary mb-3 transition-colors">Gas Cost Summary</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
             <div className="text-xs text-theme-secondary mb-1 transition-colors">Total Gas Cost (ETH)</div>
             <div className="text-lg font-bold text-theme-primary transition-colors">{stats.totalGasCostEth}</div>
@@ -482,3 +526,4 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
     </div>
   );
 }
+

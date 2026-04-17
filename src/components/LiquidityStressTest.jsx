@@ -319,7 +319,7 @@ export default function LiquidityStressTest({
       <div className="card">
         <h2 className="text-sm font-semibold text-theme-primary mb-4 transition-colors">Pool Configuration</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="label">Token Reserve</label>
             <input type="number" className="input-field" min={1000} value={pool.reserveToken}
@@ -342,7 +342,7 @@ export default function LiquidityStressTest({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="label">Slippage Tolerance (%)</label>
             <input type="number" className="input-field" min={0.1} max={100} step={0.5} value={pool.slippageTolerance}
@@ -393,9 +393,9 @@ export default function LiquidityStressTest({
           <button onClick={runStressTest} disabled={running} className={tokenAddress && masterKey ? "btn-danger" : "btn-primary"}>
             {running ? (
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-indigo-400 rounded-full pulse-dot" /> Running Stress Test...
+                <span className="w-2 h-2 bg-indigo-400 rounded-full pulse-dot" /> Running Pre-Launch Test...
               </span>
-            ) : tokenAddress && masterKey ? "Run LIVE On-Chain Stress Test" : 'Run Stress Test'}
+            ) : tokenAddress && masterKey ? "Run LIVE Pre-Launch Test" : 'Run Pre-Launch Test'}
           </button>
           {running && (
             <button onClick={() => { abortRef.current = true; addLog?.('Stress test stopped by user', 'warn'); }} className="btn-danger">
@@ -426,7 +426,7 @@ export default function LiquidityStressTest({
           {/* Issue Cards */}
           <div>
             <h3 className="text-xs text-theme-secondary uppercase tracking-wider mb-3 transition-colors">Detected Issues</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
               {[
                 { label: 'Slippage Exceeded', value: results.issues.slippageExceeded, warn: 5, fail: 20, desc: `>${pool.slippageTolerance}% tolerance` },
                 { label: 'maxTx Violations', value: results.issues.maxTxViolations, warn: 1, fail: 10, desc: pool.maxTxEth > 0 ? `limit: ${pool.maxTxEth} ${net?.currency}` : 'No limit set' },
@@ -456,7 +456,7 @@ export default function LiquidityStressTest({
           </div>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="stat-card">
               <div className="stat-label">Success Rate</div>
               <div className="stat-value" style={{ color: results.successRate > 90 ? '#10b981' : results.successRate > 70 ? '#f59e0b' : '#ef4444' }}>
@@ -483,7 +483,7 @@ export default function LiquidityStressTest({
           {/* Pool Drain Analysis */}
           <div className="card">
             <h3 className="text-sm font-semibold text-theme-primary mb-3 transition-colors">Pool Drain Analysis</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-3 rounded-lg bg-theme-elevated border border-theme-subtle transition-colors">
                 <div className="text-xs text-theme-secondary mb-1 transition-colors">{net?.currency ?? 'Native'} Reserve Change</div>
                 <div className="flex items-end gap-2">
@@ -651,3 +651,4 @@ export default function LiquidityStressTest({
     </div>
   );
 }
+
