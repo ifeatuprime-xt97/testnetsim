@@ -296,7 +296,9 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
                     <div className="flex items-center gap-2">
                        {tier.priceUSD > 0 ? (
                            <>
-                             <span className="text-2xl font-bold text-theme-primary">${tier.priceUSD}</span>
+                             <span className="text-2xl font-bold text-theme-primary">
+                               ${tier.priceUSD}{tier.id === 'advanced' ? '+' : ''}
+                             </span>
                              <span className="text-xs text-theme-secondary font-mono mt-1">({tier.priceETH} ETH)</span>
                            </>
                        ) : (

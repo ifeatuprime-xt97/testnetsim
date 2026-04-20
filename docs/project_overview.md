@@ -2,49 +2,50 @@
 
 ## Current Project Description
 
-**TestnetSim** is a comprehensive Liquidity and Load Simulator designed specifically for token creators and developers. It allows projects to simulate extreme market conditions and transaction volume on testnets (or locally) before executing a mainnet token launch. 
+**TestnetSim** has evolved from a generic transaction emulator into a premium **Pre-Launch Failure Detection Tool**. It is designed for token developers and smart-contract creators to aggressively stress test their token's AMM pool architectures (using realistic slippage limits, `maxTx` chunking, and `maxWallet` constraints) before deploying to mainnet. 
 
-By modeling variables such as token reserves, liquidity depth, max limits, and slippage tolerances, the simulator helps creators avoid costly launch failures.
+By modeling extreme mathematical boundaries and simulating highly-concurrent bot interactions, TestnetSim acts as the final firewall ensuring creators avoid costly launch failures, liquidity crunches, and smart-contract limitation traps.
 
 ### Key Features
-- **Wallet Generator:** Ephemerally generate up to 50,000 EVM (secp256k1) or Solana (ed25519) keypairs securely in memory to simulate high-volume bot participation without requiring local hardware constraints.
-- **Liquidity Stress Test:** Models intense buy/sell pressure over a simulated timeframe to gauge transaction failures, slippage impacts, max transaction (`maxTx`) violations, and max wallet limits across your custom ERC20/SPL tokens.
-- **Transaction Simulator:** Actively attempts simulated or live automated trades over a network to mimic real-world interactions over predefined timing schedules (e.g., Burst, Slow Drip, Spike).
-- **Pre-Launch Analysis Layer:** Immediately scores project readiness from 0-100 to yield a "SAFE", "RISKY", or "FAIL" verdict. Offers warnings and insights by evaluating success rates, gas spikes, and average impact vs tolerance ceilings.
+- **Wallet Generator:** Ephemerally spawn up to 50,000 EVM (secp256k1) or Solana (ed25519) keypairs securely in browser memory without external storage.
+- **Liquidity Stress Test:** Models intense buy/sell pressure over a targeted timeframe, allowing creators to inject volatility and track exactly how fast pool depths evaporate under strain. 
+- **Live On-Chain Transaction Simulator:** Execute synchronized swarm attacks over real RPC layers using distinct Behavioral Matrices ("Burst", "Spike", "Drip") to observe organic network responses to aggressive activity limits.
+- **Simulation Analysis Layer:** Raw mathematical findings are automatically processed into a **Pre-Launch Report** that grades launch viability from 0-100 yielding "SAFE", "RISKY", or "FAIL". The intelligence isolates deep parsing failures, highlights specific limit triggers, and suggests parameter calibrations.
 
 ---
 
-## Payment Methods & Pricing
+## Monetization Architecture & Pricing Strategy
 
-Given the immense processing requirements for executing tens of thousands of simulated smart contract transactions, TestnetSim operates under a tiered scaling model payable purely in cryptocurrencies. Prices are pegged to USD but dynamically converted into ETH and SOL using integrated CoinGecko oracles.
+TestnetSim has officially pivoted away from the archaic time-duration model into a direct **Pay-Per-Report Business Model**. Free exploration is strictly limited (wallet caps and disabled analytics). To expose actionable intelligence (e.g., specific smart-contract fixes, timeline mapping, and failure traces), users must spend "Report Credits". 
+
+Prices are quoted dynamically in USD via CoinGecko oracles, converting securely into real-time ETH and SOL prices.
 
 ### Supported Cryptocurrencies
 1. **Ethereum (ETH)**
-   - Operates over the Ethereum Mainnet RPC (`VITE_ETH_RPC_URL` or standard providers).
-   - Validates transactions using `ethers.js` logic to inspect `txHash` execution, receipt confirmations, and ensuring the value hits the designated `VITE_PAYMENT_WALLET_ETH`.
+   - Operates across the Ethereum Mainnet RPC.
+   - Leverages `ethers.js` to index the blockchain to verify incoming value to the internal `VITE_PAYMENT_WALLET_ETH`.
 2. **Solana (SOL)**
-   - Operates over Solana Mainnet (`VITE_SOL_RPC_URL`).
-   - Parses the transaction confirmation blocks to trace token transfers directly to `VITE_PAYMENT_WALLET_SOL` across the SPL instruction dataset.
+   - Leverages Solana Web3 modules parsing standard block confirmations verifying direct transfers to `VITE_PAYMENT_WALLET_SOL`.
 
-*Note: All payments accommodate a 2.5% slippage buffer to compensate for mid-transaction price fluctuations between the API quote layer and execution times.*
+### The Pricing Tiers 
+1. **Preview (Free Tier)**
+   - **Wallet Limit:** 10 maximum parallel wallets.
+   - **Features:** Disables advanced swarm matrices ("Burst", "Spike"). The analysis layer is blurred via a frosted glass UI constraint; users can only see the ultimate "SAFE / FAIL" label and the mathematical score without the diagnostic telemetry.
+2. **Single Report ($10)**
+   - **Reports Included:** 1
+   - **Wallet Limit:** Up to 100 
+   - **Features:** Instantly unlocks the full diagnostic telemetry for a single simulation result. 
+3. **Pro Pack ($25)**
+   - **Reports Included:** 5
+   - **Wallet Limit:** Up to 1,000 
+   - **Features:** Unmasks all timing boundaries allowing "Burst/Spike" integrations. Ideal for moderate developers needing localized tuning.
+4. **Advanced Model (Dynamic Scale)**
+   - **Reports Included:** Unlimited
+   - **Pricing Mechanism:** The USD floor is anchored at $50.00, but immediately scales dynamically based on the exact ceiling of parallel wallets the user requires, billed at $0.001 per connected wallet logic array (e.g., entering 60,000 structural connections calculates immediately to $60.00).
 
-### Pricing Tiers
-- **Free:** $0
-  - Up to 100 wallets simultaneously.
-  - Useful for basic parameter sanity-checking and limits execution to testnet constraints.
-- **Basic:** $25 (active for 24 hours)
-  - Broadens bandwidth to 1,000 wallets.
-  - Grants token creators full Live testnet executions for 1 active simulation session over the course of a launch day.
-- **Pro:** $50 (active for 24 hours)
-  - Access to 10,000 parallel execution wallets.
-  - Supports up to 5 full simulations for granular refinement. Includes advanced simulation analysis analytics.
-- **Enterprise:** $100 (active for 24 hours)
-  - Top-tier 50,000 wallet limit payload.
-  - Dedicated capacity designed for extreme load, bypassing consumer hardware limitations and offering up to 10 heavy payload simulations.
-
-### Payment Flow
-1. User selects a tier inside the `PricingModal` interface.
-2. User copies the generated payment wallet address mapped from internal `.env` protocols.
-3. User navigates to their external Web3 wallet (MetaMask, Phantom) and executes the raw token transfer.
-4. User pastes the completed `txHash` back into the portal.
-5. The system performs an on-chain verification using RPC validation to permanently unlock the session.
+### Seamless Checkout UX
+1. The user dictates an upgrade directly within the `PricingModal` interface structure.
+2. They are supplied a designated receiving address and precise `ETH` or `SOL` amount payload.
+3. The user initiates the payment from their hot wallet and inputs their confirmation `txHash`.
+4. **Auto-Polling:** The application immediately transitions into an automated validation loop—interrogating the external RPC nodes every 5 seconds until the block structure verifies the receipt.
+5. The payment validates silently, locking the state transaction variables, automatically deducting a "Report Credit" dynamically, and peeling off the blurred UI overlay entirely without the user requiring further clicks!

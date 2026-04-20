@@ -9,6 +9,7 @@ import GasEstimation from './components/GasEstimation.jsx';
 import NetworkComparison from './components/NetworkComparison.jsx';
 import TxMonitor from './components/TxMonitor.jsx';
 import PricingModal from './components/PricingModal.jsx';
+import AdminLoginModal from './components/AdminLoginModal.jsx';
 import { DEFAULT_NETWORK } from './config/networks.js';
 import { saveSession, getSessions } from './utils/storageUtils.js';
 import { usePricingTier } from './hooks/usePricingTier.js';
@@ -49,6 +50,12 @@ export default function App() {
   const [tokenAddress, setTokenAddress] = useState('');
   const [masterKey, setMasterKey] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // ── Admin State ───────────────────────────────────────────────────
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return sessionStorage.getItem('tsim_admin') === '1';
+  });
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   // Funding Strategy State
   const [fundingMode, setFundingMode] = useState('privateKey'); // 'privateKey' | 'connectWallet'
@@ -129,16 +136,45 @@ export default function App() {
     deductReport
   } = usePricingTier();
 
-  // Override wallet limits based on demo requirements
+  // Override wallet limits based on demo requirements (admin bypasses everything)
   const actualGetWalletLimit = useCallback(() => {
+    if (isAdmin) return Infinity;
     if (!tokenAddress) return Infinity;
     if (tokenAddress && (connectedAccount || masterKey)) return 100;
     return getWalletLimit();
-  }, [tokenAddress, connectedAccount, masterKey, getWalletLimit]);
+  }, [isAdmin, tokenAddress, connectedAccount, masterKey, getWalletLimit]);
 
   const actualCanUseWallets = useCallback((count) => {
+    if (isAdmin) return true;
     return count <= actualGetWalletLimit();
-  }, [actualGetWalletLimit]);
+  }, [isAdmin, actualGetWalletLimit]);
+
+  // Admin overrides for isPaid and deductReport
+  const effectiveIsPaid = useCallback(() => {
+    if (isAdmin) return true;
+    return isPaid();
+  }, [isAdmin, isPaid]);
+
+  const effectiveDeductReport = useCallback(() => {
+    if (isAdmin) return true; // never deduct for admin
+    return deductReport();
+  }, [isAdmin, deductReport]);
+
+  const effectiveAllowedPatterns = useCallback(() => {
+    if (isAdmin) return ['random', 'slowDrip', 'burst', 'spike'];
+    return allowedPatterns();
+  }, [isAdmin, allowedPatterns]);
+
+  const effectiveOpenPricingModal = useCallback(() => {
+    if (isAdmin) return; // don't show pricing to admin
+    openPricingModal();
+  }, [isAdmin, openPricingModal]);
+
+  const effectiveCurrentTier = isAdmin
+    ? { tierId: 'admin', tier: { name: 'Admin', reports: 'Unlimited', wallets: Infinity }, reportsRemaining: 'Unlimited', activatedAt: Date.now() }
+    : currentTier;
+
+  const effectiveReportsRemaining = isAdmin ? 'Unlimited' : reportsRemaining;
 
   // History state
   const [sessionHistory, setSessionHistory] = useState([]);
@@ -197,6 +233,19 @@ export default function App() {
 
   const clearLogs = useCallback(() => setLogs([]), []);
 
+  // ── Admin Handlers (defined after addLog) ─────────────────────────
+  const handleAdminLogin = useCallback(() => {
+    setIsAdmin(true);
+    sessionStorage.setItem('tsim_admin', '1');
+    addLog('Admin access granted \u2014 all limits bypassed.', 'success');
+  }, [addLog]);
+
+  const handleAdminLogout = useCallback(() => {
+    setIsAdmin(false);
+    sessionStorage.removeItem('tsim_admin');
+    addLog('Admin session ended.', 'info');
+  }, [addLog]);
+
   // Auto-open log panel on first log entry
   useEffect(() => {
     if (logs.length === 1) setLogOpen(true);
@@ -227,6 +276,9 @@ export default function App() {
         onNetworkChange={setNetwork}
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
+        onAdminTrigger={() => setShowAdminModal(true)}
+        isAdmin={isAdmin}
+        onAdminLogout={handleAdminLogout}
       />
 
       {/* ── Tab Navigation ──────────────────────────────────────── */}
@@ -457,9 +509,9 @@ export default function App() {
             network={network} 
             addLog={addLog} 
             masterKey={masterKey}
-            currentTier={currentTier}
+            currentTier={effectiveCurrentTier}
             getWalletLimit={actualGetWalletLimit}
-            openPricingModal={openPricingModal}
+            openPricingModal={effectiveOpenPricingModal}
           />
         )}
         {activeTab === 'simulator' && (
@@ -471,11 +523,11 @@ export default function App() {
             masterKey={masterKey}
             replayConfig={replayConfig}
             onReplayConsumed={() => setReplayConfig(null)}
-            currentTier={currentTier}
+            currentTier={effectiveCurrentTier}
             getWalletLimit={actualGetWalletLimit}
             canUseWallets={actualCanUseWallets}
-            openPricingModal={openPricingModal}
-            allowedPatterns={allowedPatterns}
+            openPricingModal={effectiveOpenPricingModal}
+            allowedPatterns={effectiveAllowedPatterns}
           />
         )}
         {activeTab === 'stress' && (
@@ -485,11 +537,11 @@ export default function App() {
             addLog={addLog}
             tokenAddress={tokenAddress}
             masterKey={masterKey}
-            currentTier={currentTier}
+            currentTier={effectiveCurrentTier}
             getWalletLimit={actualGetWalletLimit}
             canUseWallets={actualCanUseWallets}
-            openPricingModal={openPricingModal}
-            allowedPatterns={allowedPatterns}
+            openPricingModal={effectiveOpenPricingModal}
+            allowedPatterns={effectiveAllowedPatterns}
           />
         )}
         {activeTab === 'dashboard' && (
@@ -499,9 +551,9 @@ export default function App() {
             config={simConfig}
             tokenAddress={tokenAddress}
             network={network}
-            isPaid={isPaid()}
-            deductReport={deductReport}
-            openPricingModal={openPricingModal}
+            isPaid={effectiveIsPaid()}
+            deductReport={effectiveDeductReport}
+            openPricingModal={effectiveOpenPricingModal}
           />
         )}
         {activeTab === 'gas' && (
@@ -553,13 +605,8 @@ export default function App() {
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
               >
                 <span className="text-[10px] font-bold uppercase tracking-wider">
-                  {currentTier.tier.name} Plan
+                  {isAdmin ? 'Admin Plan' : effectiveCurrentTier?.tier?.name + ' Plan'}
                 </span>
-                {activeUntil && activeUntil > Date.now() && (
-                  <span className="text-[9px] opacity-70">
-                    · {getRemainingTime()}h left
-                  </span>
-                )}
               </button>
             )}
             {!currentTier?.tier && (
@@ -696,6 +743,13 @@ export default function App() {
         onSelectTier={selectTier}
         currentTier={currentTier}
         reportsRemaining={reportsRemaining}
+      />
+
+      {/* ── Admin Login Modal ─────────────────────────────────────── */}
+      <AdminLoginModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        onLogin={handleAdminLogin}
       />
     </div>
   );

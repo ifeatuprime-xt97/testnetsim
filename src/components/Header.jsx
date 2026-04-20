@@ -1,7 +1,22 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { NETWORKS } from '../config/networks.js';
 
-export default function Header({ network, onNetworkChange, isDarkMode, toggleTheme }) {
+export default function Header({ network, onNetworkChange, isDarkMode, toggleTheme, onAdminTrigger, isAdmin, onAdminLogout }) {
+  // Secret 5-click trigger on the subtitle
+  const clickCountRef = useRef(0);
+  const clickTimerRef = useRef(null);
+
+  const handleSubtitleClick = useCallback(() => {
+    clickCountRef.current += 1;
+    // Reset counter after 3 seconds of inactivity
+    clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = setTimeout(() => { clickCountRef.current = 0; }, 3000);
+    if (clickCountRef.current >= 5) {
+      clickCountRef.current = 0;
+      clearTimeout(clickTimerRef.current);
+      onAdminTrigger?.();
+    }
+  }, [onAdminTrigger]);
   const net = NETWORKS[network];
 
   return (
@@ -38,7 +53,12 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
             >
               TestnetSim
             </h1>
-            <p className="text-[9px] font-semibold tracking-[0.18em] uppercase mt-1 leading-none hidden sm:block" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="text-[9px] font-semibold tracking-[0.18em] uppercase mt-1 leading-none hidden sm:block select-none"
+              style={{ color: 'var(--text-muted)', cursor: 'default' }}
+              onClick={handleSubtitleClick}
+              title=""
+            >
               Liquidity &amp; Load Simulator
             </p>
           </div>
@@ -66,6 +86,23 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
 
         {/* ── Right Controls ────────────────────────────────────────── */}
         <div className="flex items-center gap-2.5">
+          {/* Admin badge */}
+          {isAdmin && (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all duration-150"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
+                border: '1px solid rgba(99,102,241,0.30)',
+                color: '#818cf8',
+                boxShadow: '0 0 14px rgba(99,102,241,0.12)',
+              }}
+              onClick={onAdminLogout}
+              title="Click to revoke admin access"
+            >
+              <span>🛡</span>
+              <span>Admin</span>
+            </div>
+          )}
 
           {/* Theme Toggle */}
           <button
