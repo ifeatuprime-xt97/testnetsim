@@ -10,7 +10,7 @@ import NetworkComparison from './components/NetworkComparison.jsx';
 import TxMonitor from './components/TxMonitor.jsx';
 import PricingModal from './components/PricingModal.jsx';
 import AdminLoginModal from './components/AdminLoginModal.jsx';
-import { DEFAULT_NETWORK } from './config/networks.js';
+import { DEFAULT_NETWORK, NETWORKS } from './config/networks.js';
 import { saveSession, getSessions } from './utils/storageUtils.js';
 import { usePricingTier } from './hooks/usePricingTier.js';
 import { ethers } from 'ethers';
@@ -66,13 +66,14 @@ export default function App() {
 
   // Web3 Logic
   const handleConnectWallet = async () => {
+    const activeNet = NETWORKS[network];
     try {
-      const { account, provider } = await connectWallet(network);
+      const { account, provider } = await connectWallet(activeNet);
       setConnectedAccount(account);
       
       // Setup bridge if missing
       if (!sessionWallet) {
-        if (network?.isSolana) {
+        if (activeNet?.isSolana) {
            const newSessionWallet = Keypair.generate();
            setSessionWallet({ 
              address: newSessionWallet.publicKey.toBase58(), 
@@ -86,8 +87,8 @@ export default function App() {
         }
       }
       
-      if (network?.chainId && !network?.isSolana) {
-         try { await ensureNetwork(provider, network); } catch(e) { console.warn(e); }
+      if (activeNet?.chainId && !activeNet?.isSolana) {
+         try { await ensureNetwork(provider, activeNet); } catch(e) { console.warn(e); }
       }
       addLog(`Connected Web3 Wallet: ${account.slice(0,6)}...${account.slice(-4)}`, 'success');
     } catch (err) {
@@ -96,12 +97,13 @@ export default function App() {
   };
   
   const handleFundSession = async () => {
+    const activeNet = NETWORKS[network];
     if (!connectedAccount || !sessionWallet) return;
     setIsFundingSession(true);
     try {
-      const txHash = await fundSessionBridge(network, sessionWallet.address, sessionFundingAmount, connectedAccount);
+      const txHash = await fundSessionBridge(activeNet, sessionWallet.address, sessionFundingAmount, connectedAccount);
       addLog(`Funding session bridge... Tx: ${txHash.slice(0,8)}...`, 'info');
-      addLog(`Session Bridge Wallet successfully funded with ${sessionFundingAmount} ${network?.isSolana ? 'SOL' : 'ETH'}!`, 'success');
+      addLog(`Session Bridge Wallet successfully funded with ${sessionFundingAmount} ${activeNet?.isSolana ? 'SOL' : 'ETH'}!`, 'success');
     } catch (err) {
       addLog(`Failed to fund session window: ${err.shortMessage || err.message}`, 'error');
     } finally {
@@ -110,10 +112,11 @@ export default function App() {
   };
   
   const handleSweepSession = async () => {
+      const activeNet = NETWORKS[network];
       if (!connectedAccount || !sessionWallet) return;
       try {
           addLog(`Sweeping session bridge to connected wallet...`, 'info');
-          const txHash = await sweepSessionBridge(network, sessionWallet.privateKey, connectedAccount);
+          const txHash = await sweepSessionBridge(activeNet, sessionWallet.privateKey, connectedAccount);
           addLog(`Successfully retrieved session funds.`, 'success');
       } catch (err) {
           addLog(`Session sweep failed: ${err.message}`, 'error');
