@@ -217,7 +217,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
       />
       
       {/* Modal */}
-      <div className="relative bg-theme-elevated border border-theme-subtle rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-theme-elevated border border-theme-subtle rounded-2xl shadow-2xl max-w-4xl w-full mx-3 sm:mx-4 max-h-[95dvh] sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-theme-subtle bg-theme-elevated/95 backdrop-blur-xl">
           <div>
@@ -239,7 +239,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Active Plan Notice */}
           {isCurrentTierActive && (
             <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
@@ -254,7 +254,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
           )}
 
           {/* Pricing Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {pricingTiers.map((tier) => {
               const isSelected = selectedTier === tier.id;
               const isCurrent = currentTier?.tierId === tier.id && isCurrentTierActive;
@@ -483,7 +483,7 @@ export default function PricingModal({ isOpen, onClose, onSelectTier, currentTie
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 px-6 py-4 border-t border-theme-subtle bg-theme-elevated/95 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-theme-subtle bg-theme-elevated/95 backdrop-blur-xl">
           <button
             onClick={onClose}
             className="btn-secondary"

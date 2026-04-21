@@ -291,16 +291,17 @@ export default function App() {
           boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
         }}
       >
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex gap-1 py-2 overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
+          <div className="flex gap-0.5 sm:gap-1 py-1.5 sm:py-2 overflow-x-auto tab-scroll-container no-scrollbar">
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`tab-btn ${activeTab === tab.id ? 'tab-btn-active' : 'tab-btn-inactive'}`}
+                className={`tab-btn flex-shrink-0 ${activeTab === tab.id ? 'tab-btn-active' : 'tab-btn-inactive'}`}
               >
                 <span className="text-base leading-none">{tab.icon}</span>
-                <span>{tab.label}</span>
+                {/* Hide labels on very small screens, show on sm+ */}
+                <span className="hidden xs:inline sm:inline">{tab.label}</span>
                 {tab.id === 'dashboard' && simStats && (
                   <span className="ml-0.5 px-1.5 py-0.5 text-[10px] rounded-full font-mono"
                     style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
@@ -311,14 +312,14 @@ export default function App() {
             ))}
 
             {/* History Toggle */}
-            <div className="ml-auto pl-3 flex items-center">
-              <div className="w-px h-5 mr-3" style={{ background: 'rgba(148,163,184,0.12)' }} />
+            <div className="ml-auto pl-2 sm:pl-3 flex items-center flex-shrink-0">
+              <div className="w-px h-5 mr-2 sm:mr-3" style={{ background: 'rgba(148,163,184,0.12)' }} />
               <button
                 onClick={() => setHistoryOpen(true)}
                 className="tab-btn tab-btn-inactive hover:text-indigo-400"
               >
                 <span>🕒</span>
-                <span>History</span>
+                <span className="hidden sm:inline">History</span>
                 {sessionHistory.length > 0 && (
                   <span className="ml-0.5 px-1.5 py-0.5 text-[10px] rounded-full font-mono"
                     style={{ background: 'rgba(148,163,184,0.08)', color: 'var(--text-muted)', border: '1px solid rgba(148,163,184,0.12)' }}>
@@ -340,169 +341,135 @@ export default function App() {
           backdropFilter: 'blur(12px)',
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-3">
-          <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0 transition-colors w-full sm:w-auto">
-            Token
-          </span>
-          <div className="relative w-full sm:flex-1 min-w-0 sm:min-w-[18rem] max-w-lg">
-            <input
-              type="text"
-              className="input-field py-1.5 text-xs font-mono pr-20"
-              style={{ borderColor: addrBorderColor }}
-              placeholder="Paste contract address to tag this session (optional)"
-              value={tokenAddress}
-              onChange={e => setTokenAddress(e.target.value.trim())}
-              spellCheck={false}
-            />
-            {tokenAddress && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                {addrValidity ? (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded font-mono"
-                    style={{ backgroundColor: '#064e3b30', color: '#10b981' }}
-                  >
-                    {addrValidity}
-                  </span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+          {/* Token address row */}
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1">
+            <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0 transition-colors">
+              Token
+            </span>
+            <div className="relative flex-1 min-w-0">
+              <input
+                type="text"
+                className="input-field py-1.5 text-xs font-mono pr-16"
+                style={{ borderColor: addrBorderColor }}
+                placeholder="Contract address (optional)"
+                value={tokenAddress}
+                onChange={e => setTokenAddress(e.target.value.trim())}
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="none"
+              />
+              {tokenAddress && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  {addrValidity ? (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor: '#064e3b30', color: '#10b981' }}>
+                      {addrValidity}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ backgroundColor: '#450a0a30', color: '#f87171' }}>
+                      invalid
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setTokenAddress('')}
+                    className="text-theme-secondary hover:text-theme-primary transition-colors text-xs p-1"
+                    title="Clear"
+                  >✕</button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Funding Mode + Key input — full-width stacked on mobile */}
+          <div className="w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-[rgba(148,163,184,0.08)] pt-2 sm:pt-0 sm:pl-4 sm:ml-auto">
+            {/* Toggle */}
+            <div className="flex rounded-lg overflow-hidden mb-2 w-full sm:w-auto"
+              style={{ background: 'rgba(8,13,24,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
+              <button
+                onClick={() => setFundingMode('privateKey')}
+                className={`flex-1 text-[10px] uppercase font-bold px-3 py-2 transition-all duration-200 ${
+                  fundingMode === 'privateKey' ? 'text-white' : 'text-theme-secondary hover:text-theme-primary'
+                }`}
+                style={fundingMode === 'privateKey' ? { background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', boxShadow: '0 0 12px rgba(99,102,241,0.4)' } : {}}
+              >🔑 Private Key</button>
+              <button
+                onClick={() => setFundingMode('connectWallet')}
+                className={`flex-1 text-[10px] uppercase font-bold px-3 py-2 transition-all duration-200 ${
+                  fundingMode === 'connectWallet' ? 'text-white' : 'text-theme-secondary hover:text-theme-primary'
+                }`}
+                style={fundingMode === 'connectWallet' ? { background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', boxShadow: '0 0 12px rgba(99,102,241,0.4)' } : {}}
+              >🔗 Connect Wallet</button>
+            </div>
+
+            {/* Dynamic inputs */}
+            {fundingMode === 'privateKey' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0">Key</span>
+                <input
+                  type="password"
+                  className="input-field py-1.5 text-xs font-mono flex-1"
+                  placeholder="Private key (for gas)"
+                  value={masterKey}
+                  onChange={e => setMasterKey(e.target.value.trim())}
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                {!connectedAccount ? (
+                  <button onClick={handleConnectWallet} className="w-full sm:w-auto px-3 py-2 rounded text-[10px] font-bold uppercase tracking-wider bg-theme-primary text-black shadow hover:brightness-110 transition-all">
+                    Connect Web3 Wallet
+                  </button>
                 ) : (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded font-mono"
-                    style={{ backgroundColor: '#450a0a30', color: '#f87171' }}
-                  >
-                    invalid
-                  </span>
+                  <>
+                    <span className="text-[10px] text-emerald-400 font-mono bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20">
+                      {connectedAccount.slice(0,6)}...{connectedAccount.slice(-4)}
+                    </span>
+                    {sessionWallet && (
+                      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <input
+                          type="number" step="0.01"
+                          value={sessionFundingAmount}
+                          onChange={e => setSessionFundingAmount(e.target.value)}
+                          className="input-field py-1 text-xs w-20 text-center"
+                          title="Amount to fund"
+                        />
+                        <button onClick={handleFundSession} disabled={isFundingSession}
+                          className={`flex-1 sm:flex-none text-[10px] px-3 py-1.5 rounded font-bold uppercase transition-colors ${
+                            isFundingSession ? 'bg-theme-base text-theme-secondary' : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                          }`}>
+                          {isFundingSession ? 'Funding...' : 'Fund'}
+                        </button>
+                        <button onClick={handleSweepSession}
+                          className="flex-1 sm:flex-none text-[10px] px-3 py-1.5 rounded bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors"
+                          title="Sweep gas back">
+                          Sweep
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
-                <button
-                  onClick={() => setTokenAddress('')}
-                  className="text-theme-secondary hover:text-theme-primary transition-colors text-xs"
-                  title="Clear"
-                >
-                  ✕
-                </button>
               </div>
             )}
           </div>
-          {tokenAddress && addrValidity && (
-            <span className="text-xs text-theme-secondary font-mono truncate hidden md:block transition-colors">
-              · {tokenAddress.slice(0, 8)}…{tokenAddress.slice(-6)}
-            </span>
-          )}
-          {!tokenAddress && (
-            <span className="text-xs text-theme-secondary opacity-80 hidden md:block transition-colors">
-              Required for live testnet execution
-            </span>
-          )}
-
-          {/* Funding Method Toggle UI */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-stretch w-full sm:w-auto mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l border-[rgba(148,163,184,0.08)] ml-0 sm:ml-auto pl-0 sm:pl-4 transition-colors duration-200">
-             <div className="flex rounded-lg overflow-hidden mr-3 mb-2 sm:mb-0 w-full sm:w-auto"
-               style={{ background: 'rgba(8,13,24,0.6)', border: '1px solid rgba(148,163,184,0.12)' }}>
-               <button
-                  onClick={() => setFundingMode('privateKey')}
-                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
-                    fundingMode === 'privateKey'
-                      ? 'text-white'
-                      : 'text-theme-secondary hover:text-theme-primary'
-                  }`}
-                  style={fundingMode === 'privateKey' ? {
-                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                    boxShadow: '0 0 12px rgba(99,102,241,0.4)',
-                  } : {}}
-               >
-                  🔑 Private Key
-               </button>
-               <button
-                  onClick={() => setFundingMode('connectWallet')}
-                  className={`flex-1 sm:flex-none text-[10px] uppercase font-bold px-3 py-1.5 transition-all duration-200 ${
-                    fundingMode === 'connectWallet'
-                      ? 'text-white'
-                      : 'text-theme-secondary hover:text-theme-primary'
-                  }`}
-                  style={fundingMode === 'connectWallet' ? {
-                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                    boxShadow: '0 0 12px rgba(99,102,241,0.4)',
-                  } : {}}
-               >
-                  🔗 Connect Wallet
-               </button>
-             </div>
-             
-             {/* Dynamic Inputs */}
-             {fundingMode === 'privateKey' ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-theme-secondary uppercase tracking-wider font-mono flex-shrink-0">
-                    Key
-                  </span>
-                  <input
-                    type="password"
-                    className="input-field py-1.5 text-xs font-mono w-full sm:w-48 flex-1"
-                    placeholder="Private key (for gas)"
-                    value={masterKey}
-                    onChange={e => setMasterKey(e.target.value.trim())}
-                    spellCheck={false}
-                  />
-                </div>
-             ) : (
-                <div className="flex items-center gap-2">
-                    {!connectedAccount ? (
-                        <button onClick={handleConnectWallet} className="px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider bg-theme-primary text-black shadow hover:brightness-110 transition-all">
-                           Connect Web3 Wallet
-                        </button>
-                     ) : (
-                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                            <span className="text-[10px] text-emerald-400 font-mono bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20 shadow-inner">
-                               {connectedAccount.slice(0,6)}...{connectedAccount.slice(-4)}
-                            </span>
-                           
-                           {sessionWallet && (
-                              <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0 sm:ml-2 sm:pl-2 sm:border-l border-theme-subtle w-full sm:w-auto">
-                                 <input 
-                                    type="number" 
-                                    step="0.01" 
-                                    value={sessionFundingAmount} 
-                                    onChange={e => setSessionFundingAmount(e.target.value)}
-                                    className="input-field py-1 text-xs w-16 text-center"
-                                    title="ETH to fund session"
-                                 />
-                                 <button 
-                                    onClick={handleFundSession} 
-                                    disabled={isFundingSession}
-                                    className={`text-[10px] px-2 py-1 rounded font-bold uppercase transition-colors ${isFundingSession ? 'bg-theme-base text-theme-secondary' : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'}`}
-                                 >
-                                    {isFundingSession ? 'Funding...' : 'Fund Session'}
-                                 </button>
-                                 <button 
-                                    onClick={handleSweepSession} 
-                                    className="text-[10px] px-2 py-1 rounded bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 font-bold uppercase transition-colors"
-                                    title="Sweep remaining gas back to MetaMask"
-                                 >
-                                    Sweep
-                                 </button>
-                                 <span className="text-[10px] text-theme-secondary font-mono bg-theme-base px-2 py-1 rounded border border-theme-subtle" title="Session Bridge Wallet (Bots draw gas from here)">
-                                    Bridge: {sessionWallet.address.slice(0,6)}...
-                                 </span>
-                              </div>
-                           )}
-                        </div>
-                    )}
-                </div>
-             )}
-          </div>
         </div>
 
-        {/* Funding Strategy Explanation */}
-        <div className="max-w-7xl mx-auto px-4 pb-2 text-[11px] leading-relaxed text-theme-secondary max-w-3xl text-left border-l-2 border-theme-subtle ml-4 mb-2 mt-2 transition-colors duration-200">
+        {/* Mode explanation — hidden on very small screens for space */}
+        <div className="max-w-7xl mx-auto px-4 pb-2 text-[11px] leading-relaxed text-theme-secondary max-w-3xl text-left border-l-2 border-theme-subtle ml-4 mb-2 mt-1 transition-colors duration-200 hidden sm:block">
           {fundingMode === 'privateKey' ? (
-             <><strong className="text-theme-primary">Private Key Mode:</strong> To simulate real load, the system spawns random temporary browser wallets. A master wallet is needed to autonomously fund these bots with gas so they can submit transactions. Paste a dedicated testnet wallet's private key. <span className="text-amber-500 font-bold">Never use a mainnet wallet.</span></>
+            <><strong className="text-theme-primary">Private Key Mode:</strong> Paste a dedicated testnet wallet's private key to fund bot wallets automatically. <span className="text-amber-500 font-bold">Never use a mainnet wallet.</span></>
           ) : (
-             <><strong className="text-theme-primary">Session Bridge Mode:</strong> Connect your wallet to generate a temporary <span className="font-mono text-indigo-400">Session Wallet</span>. Send it a single bulk funding transaction via MetaMask. This bridge silently manages and funds all the simulation bots for you, bypassing the UX nightmare of clicking "Approve" 500 times. Click <strong>SWEEP</strong> when done to immediately retrieve all unused gas.</>
+            <><strong className="text-theme-primary">Session Bridge Mode:</strong> Connect your wallet to generate a temporary <span className="font-mono text-indigo-400">Session Wallet</span> for automated bulk funding. Click <strong>Sweep</strong> when done to retrieve unused gas.</>
           )}
         </div>
       </div>
 
       {/* ── Main Content ─────────────────────────────────────────── */}
       <main
-        className="flex-1 max-w-7xl mx-auto w-full px-4 py-6"
-        style={{ paddingBottom: logOpen ? '18rem' : '4rem' }}
+        className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6"
+        style={{ paddingBottom: logOpen ? '18rem' : '5rem' }}
       >
         {activeTab === 'wallets' && (
           <WalletGenerator 
@@ -590,16 +557,16 @@ export default function App() {
         }}
       />
 
-      {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer className="border-t border-theme-subtle py-4 transition-colors duration-200 bg-theme-base">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-theme-secondary transition-colors">
-          <div>
-            <strong className="text-theme-secondary opacity-80 transition-colors">TestnetSim</strong> — Testnet-only liquidity &amp; load simulation for token creators
+      {/* ── Footer ─────────────────────────────────────────────── */}
+      <footer className="border-t border-theme-subtle py-3 transition-colors duration-200 bg-theme-base">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-theme-secondary transition-colors">
+          <div className="hidden sm:block">
+            <strong className="text-theme-secondary opacity-80 transition-colors">TestnetSim</strong> — Testnet-only liquidity &amp; load simulation
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap justify-center">
             <span className="badge-testnet">⚠ TESTNET ONLY</span>
-            <span>No mainnet support · No real funds at risk</span>
-            {currentTier?.tier && (
+            <span className="hidden sm:inline">No mainnet support · No real funds at risk</span>
+            {(currentTier?.tier || isAdmin) && (
               <button
                 onClick={openPricingModal}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
@@ -607,17 +574,6 @@ export default function App() {
                 <span className="text-[10px] font-bold uppercase tracking-wider">
                   {isAdmin ? 'Admin Plan' : effectiveCurrentTier?.tier?.name + ' Plan'}
                 </span>
-              </button>
-            )}
-            {!currentTier?.tier && (
-              <button
-                onClick={openPricingModal}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-theme-elevated border border-theme-subtle text-theme-secondary hover:text-theme-primary transition-colors"
-              >
-                <span className="text-[10px] font-bold uppercase tracking-wider">
-                  Free Plan
-                </span>
-                <span className="text-[9px]">· Upgrade</span>
               </button>
             )}
           </div>
@@ -631,31 +587,32 @@ export default function App() {
           background: 'rgba(6,10,20,0.94)',
           borderTop: '1px solid rgba(99,102,241,0.18)',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.5), 0 -1px 0 rgba(99,102,241,0.2)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {/* Header bar */}
         <div
-          className="max-w-7xl mx-auto px-4 flex items-center justify-between cursor-pointer"
+          className="max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between cursor-pointer"
           style={{ height: '40px' }}
           onClick={() => setLogOpen(v => !v)}
         >
-          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-hidden">
             <span className="text-xs font-mono font-semibold text-theme-secondary uppercase tracking-widest flex-shrink-0 transition-colors">
-              Activity Log
+              Log
             </span>
             {/* Toggle between Activity and Monitor */}
-            <div className="flex gap-1 ml-2">
+            <div className="flex gap-0.5 sm:gap-1 ml-1 sm:ml-2">
               <button
                 onClick={(e) => { e.stopPropagation(); setLogView('activity'); }}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase transition-all ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-mono uppercase transition-all ${
                   logView === 'activity' ? 'bg-indigo-500/20 text-indigo-400' : 'text-theme-secondary hover:text-theme-primary'
                 }`}
               >
-                Log
+                Activity
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setLogView('monitor'); }}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase transition-all ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-mono uppercase transition-all ${
                   logView === 'monitor' ? 'bg-indigo-500/20 text-indigo-400' : 'text-theme-secondary hover:text-theme-primary'
                 }`}
               >
@@ -663,22 +620,20 @@ export default function App() {
               </button>
             </div>
             {logs.length > 0 && (
-              <span
-                className="px-2 py-0.5 text-[10px] rounded-full font-mono flex-shrink-0 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]"
-              >
+              <span className="px-1.5 py-0.5 text-[10px] rounded-full font-mono flex-shrink-0 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                 {logs.length}
               </span>
             )}
             {!logOpen && logs.length > 0 && (
-              <span className="text-xs text-theme-secondary truncate ml-1 font-mono transition-colors">
+              <span className="text-xs text-theme-secondary truncate ml-1 font-mono transition-colors hidden sm:inline">
                 · {logs[logs.length - 1].message}
               </span>
             )}
             {!logOpen && logs.length === 0 && (
-              <span className="text-xs text-theme-secondary opacity-70 ml-1 font-mono transition-colors">· no activity yet</span>
+              <span className="text-xs text-theme-secondary opacity-70 ml-1 font-mono transition-colors hidden sm:inline">· no activity yet</span>
             )}
           </div>
-          <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-2 sm:ml-4">
             {logs.length > 0 && (
               <button
                 onClick={e => { e.stopPropagation(); clearLogs(); }}
@@ -693,18 +648,16 @@ export default function App() {
 
         {/* Expandable log body */}
         {logOpen && (
-          <div
-            className="max-w-7xl mx-auto px-4 pb-3 border-t border-theme-subtle transition-colors duration-200"
-          >
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3 border-t border-theme-subtle transition-colors duration-200">
             {logView === 'activity' ? (
               <div
                 ref={logListRef}
                 className="overflow-y-auto py-2 space-y-0.5"
-                style={{ height: '13rem' }}
+                style={{ height: 'min(13rem, 40vh)' }}
               >
                 {logs.length === 0 ? (
                   <div className="text-xs text-theme-secondary opacity-70 py-8 text-center font-mono transition-colors">
-                    No activity yet — use the tools above to generate log entries.
+                    No activity yet.
                   </div>
                 ) : (
                   [...logs].reverse().map(entry => {
@@ -712,23 +665,22 @@ export default function App() {
                     return (
                       <div
                         key={entry.id}
-                        className="flex items-start gap-2.5 text-xs py-0.5 px-2 rounded transition-colors animate-fade-in"
+                        className="flex items-start gap-2 text-xs py-0.5 px-1 sm:px-2 rounded transition-colors animate-fade-in"
                         style={{ fontFamily: "'JetBrains Mono', monospace" }}
                       >
-                        {/* Left colour bar */}
                         <div className="w-0.5 self-stretch rounded-full flex-shrink-0 mt-0.5" style={{ background: meta.barColor, opacity: 0.7 }} />
-                        <span className="text-[var(--text-muted)] flex-shrink-0 w-16 tabular-nums">{entry.time}</span>
-                        <span className={`flex-shrink-0 font-bold ${meta.textClass}`} style={{ minWidth: '3.5rem' }}>
+                        <span className="text-[var(--text-muted)] flex-shrink-0 w-14 sm:w-16 tabular-nums text-[10px]">{entry.time}</span>
+                        <span className={`flex-shrink-0 font-bold ${meta.textClass} hidden sm:inline`} style={{ minWidth: '3.5rem' }}>
                           {meta.label}
                         </span>
-                        <span className={`${meta.dimClass} leading-relaxed`}>{entry.message}</span>
+                        <span className={`${meta.dimClass} leading-relaxed min-w-0 break-words`}>{entry.message}</span>
                       </div>
                     );
                   })
                 )}
               </div>
             ) : (
-              <div className="py-2" style={{ height: '13rem' }}>
+              <div className="py-2" style={{ height: 'min(13rem, 40vh)' }}>
                 <TxMonitor network={network} addLog={addLog} />
               </div>
             )}

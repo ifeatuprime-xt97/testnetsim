@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Hide scrollbar utility (keeps scrolling, hides bar) ─────────── */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+
 /* ─── Google Fonts are loaded in index.html ─────────────────────────── */
 
 @layer base {
@@ -512,3 +519,65 @@ body:not(.dark) .activity-log-panel {
 
 /* Stat value smooth transition */
 .stat-value { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* ─── Mobile / Touch Optimizations ──────────────────────────────────── */
+
+/* Prevent iOS auto-zoom on input focus (must be font-size >= 16px on mobile) */
+@media (max-width: 768px) {
+  .input-field,
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Larger touch targets for buttons */
+  .tab-btn {
+    min-height: 40px;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  /* Glass panel reduces padding on mobile */
+  .glass-panel {
+    @apply p-4;
+  }
+
+  /* Cards also tighter */
+  .card {
+    @apply p-4;
+  }
+
+  /* Stat cards: smaller text */
+  .stat-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Safe-area inset for phones with notches (iOS / Android) */
+.fixed-bottom-panel {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Horizontal scroll snap for tab bar on mobile */
+.tab-scroll-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-scroll-container > * {
+  scroll-snap-align: start;
+}
+
+/* Prevent text selection on UI chrome */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Smooth momentum scrolling on iOS for overflow containers */
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}

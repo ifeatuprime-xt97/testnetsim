@@ -270,7 +270,7 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
       </div>
 
       {/* ── Export Controls ──────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-theme-primary transition-colors">Simulation Report</h2>
           <p className="text-xs text-theme-secondary mt-0.5 transition-colors">
@@ -282,14 +282,14 @@ export default function Dashboard({ results, stats, config, tokenAddress, networ
             )}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => exportCSV(results)} className="btn-secondary text-xs py-1.5">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => exportCSV(results)} className="btn-secondary text-xs py-1.5 flex-1 sm:flex-none">
             Export CSV
           </button>
-          <button onClick={() => exportJSON(results, stats, config)} className="btn-secondary text-xs py-1.5">
+          <button onClick={() => exportJSON(results, stats, config)} className="btn-secondary text-xs py-1.5 flex-1 sm:flex-none">
             Export JSON
           </button>
-          <button onClick={() => exportPDFReport(results, stats, config, net?.name)} className="btn-primary text-xs py-1.5">
+          <button onClick={() => exportPDFReport(results, stats, config, net?.name)} className="btn-primary text-xs py-1.5 flex-1 sm:flex-none">
             Export PDF
           </button>
         </div>
