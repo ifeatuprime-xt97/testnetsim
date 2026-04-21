@@ -339,10 +339,10 @@ export default function TransactionSimulator({
           </div>
         </div>
 
-        <div className="flex gap-3 mt-5">
-          <button onClick={handleRun} disabled={isRunning} className={tokenAddress && masterKey ? "btn-danger" : "btn-success"}>
+        <div className="flex flex-wrap gap-2 mt-5">
+          <button onClick={handleRun} disabled={isRunning} className={`${tokenAddress && masterKey ? 'btn-danger' : 'btn-success'} flex-1 sm:flex-none`}>
             {isRunning ? (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center justify-center gap-2">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full pulse-dot" /> Running...
               </span>
             ) : tokenAddress && masterKey ? 'Run LIVE Pre-Launch Test' : 'Run Pre-Launch Test'}
@@ -357,13 +357,13 @@ export default function TransactionSimulator({
           {wallets.length > 0 && !isRunning && (
             <>
               <button onClick={handleExport} className="btn-secondary flex items-center gap-2">
-                ⬇ Export Bots (CSV)
+                ⬇ Export Bots
               </button>
               {tokenAddress && masterKey && (
                 <button onClick={handleSweep} disabled={isSweeping} className="btn-secondary text-amber-500 border-amber-500/30 hover:bg-amber-500/10 flex items-center gap-2">
                   {isSweeping ? (
                     <><span className="w-2 h-2 bg-amber-400 rounded-full pulse-dot" /> {sweepProgress}</>
-                  ) : "🧹 Sweep Funds"}
+                  ) : "🧹 Sweep"}
                 </button>
               )}
             </>
@@ -433,7 +433,8 @@ export default function TransactionSimulator({
             />
           </div>
 
-          <div ref={logRef} className="overflow-y-auto space-y-0 pr-2" style={{ height: '18rem' }}>
+          <div ref={logRef} className="overflow-x-auto overflow-y-auto pr-1 sm:pr-2" style={{ height: 'min(18rem, 50vh)' }}>
+            <div className="min-w-[560px]">
             {results.map(r => (
               <div key={r.id} className="log-entry">
                 <span className="text-theme-secondary w-8 flex-shrink-0 tabular-nums transition-colors">#{r.id}</span>
@@ -467,6 +468,7 @@ export default function TransactionSimulator({
                 <span className="pulse-dot">Processing next transaction...</span>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

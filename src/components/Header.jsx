@@ -54,7 +54,7 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
               TestnetSim
             </h1>
             <p
-              className="text-[9px] font-semibold tracking-[0.18em] uppercase mt-1 leading-none hidden sm:block select-none"
+              className="text-[9px] font-semibold tracking-[0.18em] uppercase mt-1 leading-none select-none"
               style={{ color: 'var(--text-muted)', cursor: 'default' }}
               onClick={handleSubtitleClick}
               title=""
@@ -81,15 +81,15 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#f59e0b' }} />
           </span>
           <span className="text-amber-400 text-[10px] font-bold tracking-[0.15em] uppercase">Testnet Only</span>
-          <span className="text-amber-500/50 text-[10px] font-medium">— No mainnet support · Pre-launch testing only</span>
+          <span className="text-amber-500/50 text-[10px] font-medium hidden sm:inline">— No mainnet support</span>
         </div>
 
         {/* ── Right Controls ────────────────────────────────────────── */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Admin badge */}
           {isAdmin && (
             <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all duration-150"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all duration-150"
               style={{
                 background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.14))',
                 border: '1px solid rgba(99,102,241,0.30)',
@@ -100,14 +100,14 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
               title="Click to revoke admin access"
             >
               <span>🛡</span>
-              <span>Admin</span>
+              <span className="hidden xs:inline">Admin</span>
             </div>
           )}
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="relative w-9 h-9 rounded-xl flex items-center justify-center text-base transition-all duration-300 hover:-translate-y-px"
+            className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base transition-all duration-300 hover:-translate-y-px"
             style={{
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-subtle)',
@@ -124,14 +124,13 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
           </button>
 
           {/* Network Selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200"
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-xl border transition-all duration-200"
             style={{
               background: 'var(--bg-elevated)',
               borderColor: 'var(--border-subtle)',
             }}
           >
-            {/* Network colour dot / icon */}
-            <div className="w-5 h-5 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center">
               <img
                 src={`/${net?.iconId}-logo.svg`}
                 alt={net?.name}
@@ -143,7 +142,7 @@ export default function Header({ network, onNetworkChange, isDarkMode, toggleThe
               value={network}
               onChange={e => onNetworkChange(e.target.value)}
               className="bg-transparent border-none outline-none text-xs font-semibold pr-1 cursor-pointer"
-              style={{ color: 'var(--text-primary)', minWidth: '7rem', maxWidth: '40vw' }}
+              style={{ color: 'var(--text-primary)', minWidth: '4rem', maxWidth: '28vw' }}
             >
               <optgroup label="⚠ Testnets Only">
                 {Object.values(NETWORKS).map(n => (

@@ -385,11 +385,11 @@ export default function LiquidityStressTest({
           </div>
         </div>
 
-        <div className="flex gap-3 mt-5">
-          <button onClick={runStressTest} disabled={running} className={tokenAddress && masterKey ? "btn-danger" : "btn-primary"}>
+        <div className="flex flex-wrap gap-2 mt-5">
+          <button onClick={runStressTest} disabled={running} className={`${tokenAddress && masterKey ? 'btn-danger' : 'btn-primary'} flex-1 sm:flex-none`}>
             {running ? (
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-indigo-400 rounded-full pulse-dot" /> Running Pre-Launch Test...
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-2 h-2 bg-indigo-400 rounded-full pulse-dot" /> Running...
               </span>
             ) : tokenAddress && masterKey ? "Run LIVE Pre-Launch Test" : 'Run Pre-Launch Test'}
           </button>
@@ -402,13 +402,13 @@ export default function LiquidityStressTest({
           {wallets.length > 0 && !running && (
             <>
               <button onClick={handleExport} className="btn-secondary flex items-center gap-2">
-                ⬇ Export Bots (CSV)
+                ⬇ Export Bots
               </button>
               {tokenAddress && masterKey && (
                 <button onClick={handleSweep} disabled={isSweeping} className="btn-secondary text-amber-500 border-amber-500/30 hover:bg-amber-500/10 flex items-center gap-2">
                   {isSweeping ? (
                     <><span className="w-2 h-2 bg-amber-400 rounded-full pulse-dot" /> {sweepProgress}</>
-                  ) : "🧹 Sweep Funds"}
+                  ) : "🧹 Sweep"}
                 </button>
               )}
             </>
@@ -422,7 +422,7 @@ export default function LiquidityStressTest({
           {/* Issue Cards */}
           <div>
             <h3 className="text-xs text-theme-secondary uppercase tracking-wider mb-3 transition-colors">Detected Issues</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {[
                 { label: 'Slippage Exceeded', value: results.issues.slippageExceeded, warn: 5, fail: 20, desc: `>${pool.slippageTolerance}% tolerance` },
                 { label: 'maxTx Violations', value: results.issues.maxTxViolations, warn: 1, fail: 10, desc: pool.maxTxEth > 0 ? `limit: ${pool.maxTxEth} ${net?.currency}` : 'No limit set' },
@@ -591,7 +591,8 @@ export default function LiquidityStressTest({
                     </span>
                   </div>
 
-                  <div className="overflow-y-auto space-y-0.5 pr-1 border-t border-theme-subtle pt-2 mt-2 transition-colors" style={{ height: '20rem' }}>
+                  <div className="overflow-x-auto overflow-y-auto pr-1 border-t border-theme-subtle pt-2 mt-2 transition-colors" style={{ height: 'min(20rem, 55vh)' }}>
+                    <div className="min-w-[560px]">
                     {results.txLog.map(r => (
                       <div key={r.id} className="log-entry">
                         <span className="text-theme-secondary w-8 flex-shrink-0 tabular-nums transition-colors">#{r.id}</span>
@@ -621,6 +622,7 @@ export default function LiquidityStressTest({
                         )}
                       </div>
                     ))}
+                    </div>
                   </div>
                 </div>
               )}
